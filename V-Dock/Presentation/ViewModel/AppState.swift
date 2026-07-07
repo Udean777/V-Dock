@@ -32,19 +32,22 @@ final class AppState {
     private let resourceUseCase: ResourceMonitorUseCase
     private let mediaCaptureUseCase: MediaCaptureUseCase
     private let quickTogglesUseCase: QuickTogglesUseCase
+    let logStreamUseCase: LogStreamUseCase
     
     init(
         discoverUseCase: DiscoverDevicesUseCase,
         lifecycleUseCase: DeviceLifecycleUseCase,
         resourceUseCase: ResourceMonitorUseCase,
         mediaCaptureUseCase: MediaCaptureUseCase,
-        quickTogglesUseCase: QuickTogglesUseCase
+        quickTogglesUseCase: QuickTogglesUseCase,
+        logStreamUseCase: LogStreamUseCase
     ) {
         self.discoverUseCase = discoverUseCase
         self.lifecycleUseCase = lifecycleUseCase
         self.resourceUseCase = resourceUseCase
         self.mediaCaptureUseCase = mediaCaptureUseCase
         self.quickTogglesUseCase = quickTogglesUseCase
+        self.logStreamUseCase = logStreamUseCase
         pinnedIDs = Set(UserDefaults.standard.stringArray(forKey: "pinnedIDs") ?? [])
         androidSDKPath = UserDefaults.standard.string(forKey: "androidSDKPath") ?? ""
         isLaunchAtLoginEnabled = SMAppService.mainApp.status == .enabled
@@ -170,5 +173,9 @@ final class AppState {
         } catch {
             actionError = "Failed to toggle appearance: \(error.localizedDescription)"
         }
+    }
+    
+    func openLogcat(for device: Device) {
+        NotificationCenter.default.post(name: NSNotification.Name("OpenLogcat"), object: device)
     }
 }

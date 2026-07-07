@@ -137,3 +137,11 @@ extension AndroidEmulatorRepository: QuickTogglesProtocol {
         _ = try await shell.run(adb, args: ["-e", "shell", "cmd", "uimode", "night", isDark ? "yes" : "no"])
     }
 }
+
+extension AndroidEmulatorRepository: LogStreamProtocol {
+    func streamLogs(for device: Device) -> AsyncStream<String> {
+        guard let adb = adbPath else { return AsyncStream { $0.finish() } }
+        let processID = "log_android_\(device.id)"
+        return shell.stream(id: processID, executable: adb, args: ["-e", "logcat", "-v", "brief"])
+    }
+}

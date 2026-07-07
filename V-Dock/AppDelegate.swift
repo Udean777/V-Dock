@@ -53,7 +53,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // switch the app back to .accessory mode (hiding the Dock icon).
         for window in NSApp.windows {
             // Note: SwiftUI's .navigationTitle("Devices") renames the "Dashboard" window!
-            if window.title == "Dashboard" || window.title == "Devices" || window.title == "Settings" {
+            if window.title == "Dashboard" || window.title == "Devices" || window.title == "Settings" || window.title.hasPrefix("Logcat: ") {
                 window.close()
             }
         }

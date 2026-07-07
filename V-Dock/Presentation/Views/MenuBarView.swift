@@ -151,6 +151,11 @@ struct MenuBarView: View {
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OpenSettings"))) { _ in
             openSettingsWindow()
         }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OpenLogcat"))) { notification in
+            if let device = notification.object as? Device {
+                openLogcatWindow(for: device)
+            }
+        }
     }
     
     private func openDashboardWindow() {
@@ -209,10 +214,41 @@ struct MenuBarView: View {
         }
     }
     
+    private func openLogcatWindow(for device: Device) {
+        NSApp.setActivationPolicy(.regular)
+        
+        let windowTitle = "Logcat: \(device.name)"
+        if let window = NSApp.windows.first(where: { $0.title == windowTitle }) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                window.makeKeyAndOrderFront(nil)
+                NSApp.activate(ignoringOtherApps: true)
+            }
+            return
+        }
+        
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 900, height: 600),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered, defer: false)
+        window.center()
+        window.title = windowTitle
+        window.isRestorable = false
+        window.isReleasedWhenClosed = false
+        
+        window.contentView = NSHostingView(rootView: LogcatView(device: device).environment(state))
+        
+        setupWindowObserver(for: window)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+    
     private func setupWindowObserver(for window: NSWindow) {
         NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { _ in
             let remainingWindows = NSApp.windows.filter { 
-                $0 != window && $0.isVisible && ($0.title == "Dashboard" || $0.title == "Devices" || $0.title == "Settings") 
+                $0 != window && $0.isVisible && ($0.title == "Dashboard" || $0.title == "Devices" || $0.title == "Settings" || $0.title.hasPrefix("Logcat: ")) 
             }
             if remainingWindows.isEmpty {
                 NSApp.setActivationPolicy(.accessory)
@@ -301,6 +337,7 @@ struct MenuBarDeviceRow: View {
                         Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
                         Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
                     }
+                    Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
                     Divider()
                     Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
                 }
@@ -319,6 +356,7 @@ struct MenuBarDeviceRow: View {
                         Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
                         Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
                     }
+                    Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
                     Divider()
                     Button("Cold Boot (Restart)", systemImage: "bolt.fill") { showColdBootConfirm = true }
                 }

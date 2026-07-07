@@ -70,6 +70,7 @@ struct DeviceCardView: View {
                         Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
                         Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
                     }
+                    Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
                     Divider()
                     Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
                 }
@@ -88,6 +89,7 @@ struct DeviceCardView: View {
                         Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
                         Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
                     }
+                    Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
                     Divider()
                     Button("Cold Boot (Restart)", systemImage: "bolt.fill") { showColdBootConfirm = true }
                 }

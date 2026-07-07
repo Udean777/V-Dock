@@ -22,13 +22,18 @@ final class DependencyContainer {
             iosToggles: simulatorRepo,
             androidToggles: androidRepo
         )
+        let logStreamUseCase = LogStreamUseCase(
+            iosStream: simulatorRepo,
+            androidStream: androidRepo
+        )
         
         appState = AppState(
             discoverUseCase: discoverUseCase,
             lifecycleUseCase: lifecycleUseCase,
             resourceUseCase: resourceUseCase,
             mediaCaptureUseCase: mediaCaptureUseCase,
-            quickTogglesUseCase: quickTogglesUseCase
+            quickTogglesUseCase: quickTogglesUseCase,
+            logStreamUseCase: logStreamUseCase
         )
     }
 }

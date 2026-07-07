@@ -78,3 +78,10 @@ extension SimulatorRepository: QuickTogglesProtocol {
         _ = try await shell.run("/usr/bin/xcrun", args: ["simctl", "ui", device.id, "appearance", isDark ? "dark" : "light"])
     }
 }
+
+extension SimulatorRepository: LogStreamProtocol {
+    func streamLogs(for device: Device) -> AsyncStream<String> {
+        let processID = "log_ios_\(device.id)"
+        return shell.stream(id: processID, executable: "/usr/bin/xcrun", args: ["simctl", "spawn", device.id, "log", "show", "--stream", "--style", "compact"])
+    }
+}
