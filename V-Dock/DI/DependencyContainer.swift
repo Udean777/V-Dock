@@ -18,12 +18,17 @@ final class DependencyContainer {
             iosCapture: simulatorRepo,
             androidCapture: androidRepo
         )
+        let quickTogglesUseCase = QuickTogglesUseCase(
+            iosToggles: simulatorRepo,
+            androidToggles: androidRepo
+        )
         
         appState = AppState(
             discoverUseCase: discoverUseCase,
             lifecycleUseCase: lifecycleUseCase,
             resourceUseCase: resourceUseCase,
-            mediaCaptureUseCase: mediaCaptureUseCase
+            mediaCaptureUseCase: mediaCaptureUseCase,
+            quickTogglesUseCase: quickTogglesUseCase
         )
     }
 }

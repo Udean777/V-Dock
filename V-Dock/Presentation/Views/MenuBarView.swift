@@ -297,6 +297,11 @@ struct MenuBarDeviceRow: View {
                     Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
                     Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
                     Divider()
+                    Menu("Appearance", systemImage: "paintbrush") {
+                        Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
+                        Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
+                    }
+                    Divider()
                     Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
                 }
                 Button("Erase All Content & Settings", systemImage: "trash", role: .destructive) { showWipeConfirm = true }
@@ -309,6 +314,11 @@ struct MenuBarDeviceRow: View {
                 } else {
                     Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
                     Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
+                    Divider()
+                    Menu("Appearance", systemImage: "paintbrush") {
+                        Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
+                        Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
+                    }
                     Divider()
                     Button("Cold Boot (Restart)", systemImage: "bolt.fill") { showColdBootConfirm = true }
                 }

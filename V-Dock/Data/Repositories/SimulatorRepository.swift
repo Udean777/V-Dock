@@ -72,3 +72,9 @@ extension SimulatorRepository: MediaCaptureProtocol {
         await shell.terminate(id: processID)
     }
 }
+
+extension SimulatorRepository: QuickTogglesProtocol {
+    func setDarkMode(device: Device, isDark: Bool) async throws {
+        _ = try await shell.run("/usr/bin/xcrun", args: ["simctl", "ui", device.id, "appearance", isDark ? "dark" : "light"])
+    }
+}

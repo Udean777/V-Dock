@@ -61,49 +61,37 @@ struct DeviceCardView: View {
         .contextMenu {
             if device.platform == .ios {
                 if device.status == .shutdown {
-                    Button("Boot", systemImage: "play") {
-                        Task { await onPerformAction(.boot) }
-                    }
+                    Button("Boot", systemImage: "play") { Task { await state.perform(.boot, on: device) } }
                 } else {
-                    Button("Shutdown", systemImage: "stop") {
-                        Task { await onPerformAction(.shutdown) }
-                    }
-                    Button("Force Kill", systemImage: "xmark.octagon") {
-                        Task { await onPerformAction(.forceKill) }
+                    Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
+                    Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
+                    Divider()
+                    Menu("Appearance", systemImage: "paintbrush") {
+                        Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
+                        Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
                     }
                     Divider()
-                    Button("Cold Boot", systemImage: "bolt") {
-                        showColdBootConfirm = true
-                    }
+                    Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
                 }
-                Button("Erase All Content & Settings", systemImage: "trash", role: .destructive) {
-                    showWipeConfirm = true
-                }
+                Button("Erase All Content & Settings", systemImage: "trash", role: .destructive) { showWipeConfirm = true }
             }
             
             if device.platform == .android {
                 if device.status == .shutdown {
-                    Button("Boot", systemImage: "play") {
-                        Task { await onPerformAction(.boot) }
-                    }
-                    Button("Cold Boot", systemImage: "bolt") {
-                        showColdBootConfirm = true
-                    }
+                    Button("Boot", systemImage: "play") { Task { await state.perform(.boot, on: device) } }
+                    Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
                 } else {
-                    Button("Shutdown", systemImage: "stop") {
-                        Task { await onPerformAction(.shutdown) }
-                    }
-                    Button("Force Kill", systemImage: "xmark.octagon") {
-                        Task { await onPerformAction(.forceKill) }
+                    Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
+                    Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
+                    Divider()
+                    Menu("Appearance", systemImage: "paintbrush") {
+                        Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
+                        Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
                     }
                     Divider()
-                    Button("Cold Boot (Restart)", systemImage: "bolt.fill") {
-                        showColdBootConfirm = true
-                    }
+                    Button("Cold Boot (Restart)", systemImage: "bolt.fill") { showColdBootConfirm = true }
                 }
-                Button("Wipe Data", systemImage: "trash", role: .destructive) {
-                    showWipeConfirm = true
-                }
+                Button("Wipe Data", systemImage: "trash", role: .destructive) { showWipeConfirm = true }
             }
         }
         .destructiveActionAlert(

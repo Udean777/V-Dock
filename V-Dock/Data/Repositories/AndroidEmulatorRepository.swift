@@ -130,3 +130,10 @@ extension AndroidEmulatorRepository: MediaCaptureProtocol {
         _ = try? await shell.run(adb, args: ["-e", "shell", "rm", "/sdcard/vid.mp4"])
     }
 }
+
+extension AndroidEmulatorRepository: QuickTogglesProtocol {
+    func setDarkMode(device: Device, isDark: Bool) async throws {
+        guard let adb = adbPath else { return }
+        _ = try await shell.run(adb, args: ["-e", "shell", "cmd", "uimode", "night", isDark ? "yes" : "no"])
+    }
+}

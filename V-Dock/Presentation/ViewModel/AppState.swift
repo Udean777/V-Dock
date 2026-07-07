@@ -31,17 +31,20 @@ final class AppState {
     private let lifecycleUseCase: DeviceLifecycleUseCase
     private let resourceUseCase: ResourceMonitorUseCase
     private let mediaCaptureUseCase: MediaCaptureUseCase
+    private let quickTogglesUseCase: QuickTogglesUseCase
     
     init(
         discoverUseCase: DiscoverDevicesUseCase,
         lifecycleUseCase: DeviceLifecycleUseCase,
         resourceUseCase: ResourceMonitorUseCase,
-        mediaCaptureUseCase: MediaCaptureUseCase
+        mediaCaptureUseCase: MediaCaptureUseCase,
+        quickTogglesUseCase: QuickTogglesUseCase
     ) {
         self.discoverUseCase = discoverUseCase
         self.lifecycleUseCase = lifecycleUseCase
         self.resourceUseCase = resourceUseCase
         self.mediaCaptureUseCase = mediaCaptureUseCase
+        self.quickTogglesUseCase = quickTogglesUseCase
         pinnedIDs = Set(UserDefaults.standard.stringArray(forKey: "pinnedIDs") ?? [])
         androidSDKPath = UserDefaults.standard.string(forKey: "androidSDKPath") ?? ""
         isLaunchAtLoginEnabled = SMAppService.mainApp.status == .enabled
@@ -153,6 +156,19 @@ final class AppState {
             } catch {
                 actionError = "Failed to start recording: \(error.localizedDescription)"
             }
+        }
+    }
+    
+    func setDarkMode(for device: Device, isDark: Bool) async {
+        isProcessingAction = true
+        actionError = nil
+        defer { isProcessingAction = false }
+        
+        do {
+            try await quickTogglesUseCase.setDarkMode(device: device, isDark: isDark)
+            NSSound(named: "Pop")?.play()
+        } catch {
+            actionError = "Failed to toggle appearance: \(error.localizedDescription)"
         }
     }
 }
