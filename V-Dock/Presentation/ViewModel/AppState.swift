@@ -11,6 +11,7 @@ final class AppState {
     var isRefreshing = false
     var isProcessingAction = false
     var refreshError: String?
+    var actionError: String?
     var androidSDKPath: String {
         didSet {
             UserDefaults.standard.set(androidSDKPath, forKey: "androidSDKPath")
@@ -64,8 +65,14 @@ final class AppState {
     
     func perform(_ action: DeviceAction, on device: Device) async {
         isProcessingAction = true
+        actionError = nil
         defer { isProcessingAction = false }
-        try? await lifecycleUseCase.execute(action, on: device)
+        
+        do {
+            try await lifecycleUseCase.execute(action, on: device)
+        } catch {
+            actionError = "Failed to \(action): \(error.localizedDescription)"
+        }
         await refresh()
     }
     

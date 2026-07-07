@@ -40,7 +40,12 @@ extension SimulatorRepository: DeviceLifecycleProtocol {
     }
     
     func coldBoot(device: Device) async throws {
-        try await boot(device: device)
+        _ = try? await shell.run("/usr/bin/xcrun", args: ["simctl", "shutdown", device.id])        
+
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        
+        _ = try await shell.run("/usr/bin/xcrun", args: ["simctl", "boot", device.id])
+        try shell.runDetached("/usr/bin/open", args: ["-a", "Simulator"])
     }
     
     func wipeData(device: Device) async throws {

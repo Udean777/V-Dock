@@ -7,6 +7,9 @@ struct DeviceCardView: View {
     let onTogglePin: () -> Void
     let onPerformAction: (DeviceAction) async -> Void
     
+    @State private var showWipeConfirm = false
+    @State private var showColdBootConfirm = false
+    
     var body: some View {
         HStack(spacing: 12) {
             platformIcon
@@ -32,27 +35,70 @@ struct DeviceCardView: View {
         .padding(.vertical, 8)
         .padding(.horizontal, 4)
         .contextMenu {
-            if device.status == .shutdown {
-                Button("Boot", systemImage: "play") {
-                    Task { await onPerformAction(.boot) }
+            if device.platform == .ios {
+                if device.status == .shutdown {
+                    Button("Boot", systemImage: "play") {
+                        Task { await onPerformAction(.boot) }
+                    }
+                } else {
+                    Button("Shutdown", systemImage: "stop") {
+                        Task { await onPerformAction(.shutdown) }
+                    }
+                    Button("Force Kill", systemImage: "xmark.octagon") {
+                        Task { await onPerformAction(.forceKill) }
+                    }
+                    Divider()
+                    Button("Cold Boot", systemImage: "bolt") {
+                        showColdBootConfirm = true
+                    }
                 }
-            } else {
-                Button("Shutdown", systemImage: "stop") {
-                    Task { await onPerformAction(.shutdown) }
-                }
-                Button("Force Kill", systemImage: "xmark.octagon") {
-                    Task { await onPerformAction(.forceKill) }
+                Button("Erase All Content & Settings", systemImage: "trash", role: .destructive) {
+                    showWipeConfirm = true
                 }
             }
+            
             if device.platform == .android {
-                Divider()
-                Button("Cold Boot", systemImage: "bolt") {
-                    Task { await onPerformAction(.coldBoot) }
+                if device.status == .shutdown {
+                    Button("Boot", systemImage: "play") {
+                        Task { await onPerformAction(.boot) }
+                    }
+                    Button("Cold Boot", systemImage: "bolt") {
+                        showColdBootConfirm = true
+                    }
+                } else {
+                    Button("Shutdown", systemImage: "stop") {
+                        Task { await onPerformAction(.shutdown) }
+                    }
+                    Button("Force Kill", systemImage: "xmark.octagon") {
+                        Task { await onPerformAction(.forceKill) }
+                    }
+                    Divider()
+                    Button("Cold Boot (Restart)", systemImage: "bolt.fill") {
+                        showColdBootConfirm = true
+                    }
                 }
-                Button("Wipe Data", systemImage: "trash") {
-                    Task { await onPerformAction(.wipeData) }
+                Button("Wipe Data", systemImage: "trash", role: .destructive) {
+                    showWipeConfirm = true
                 }
             }
+        }
+        .destructiveActionAlert(
+            title: "Erase \(device.name)?",
+            message: device.platform == .ios
+                ? "This will permanently erase all content and settings on this simulator, including installed apps and their data."
+                : "This will wipe all user data on this emulator. The AVD configuration will remain intact.",
+            confirmLabel: device.platform == .ios ? "Erase All Content" : "Wipe Data",
+            isPresented: $showWipeConfirm
+        ) {
+            await onPerformAction(.wipeData)
+        }
+        .destructiveActionAlert(
+            title: "Cold Boot \(device.name)?",
+            message: "The device will be shut down and restarted from a clean state, discarding any saved snapshot.",
+            confirmLabel: "Cold Boot",
+            isPresented: $showColdBootConfirm
+        ) {
+            await onPerformAction(.coldBoot)
         }
     }
     
