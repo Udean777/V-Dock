@@ -3,9 +3,16 @@ import SwiftUI
 struct SettingsAboutView: View {
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: "display")
-                .font(.system(size: 48))
-                .foregroundStyle(.tint)
+            if let appIcon = NSImage(named: NSImage.applicationIconName) {
+                Image(nsImage: appIcon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 80, height: 80)
+            } else {
+                Image(systemName: "display")
+                    .font(.system(size: 48))
+                    .foregroundStyle(.tint)
+            }
             
             Text("V-Dock")
                 .font(.title)
@@ -40,11 +47,11 @@ struct SettingsAboutView: View {
     }
     
     private var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
     }
     
     private var buildNumber: String {
-        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
     }
     
     private var macOSVersion: String {

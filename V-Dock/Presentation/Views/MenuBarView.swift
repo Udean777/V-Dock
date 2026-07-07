@@ -6,10 +6,25 @@ struct MenuBarView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header
-            HStack {
+            HStack(spacing: 8) {
+                if let appIcon = NSImage(named: NSImage.applicationIconName) {
+                    Image(nsImage: appIcon)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 20, height: 20)
+                }
+                
                 Text("V-Dock")
                     .font(.headline)
                     .fontWeight(.semibold)
+                
+                if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+                    Text("v\(version)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 4)
+                }
+                
                 Spacer()
             }
             .padding()

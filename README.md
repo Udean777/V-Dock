@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/github/explore/80688e429a7d4ef2fca1e82350fe8e3517d3494d/topics/swift/swift.png" width="80" alt="Swift Logo">
+  <img src="assets/logo.png" width="100" alt="V-Dock Logo">
   <h1>V-Dock</h1>
   <p><strong>The Ultimate macOS Control Center for Mobile Developers</strong></p>
 
@@ -14,6 +14,12 @@
 
 V-Dock is a lightning-fast, native macOS Menu Bar utility designed to streamline the workflow of iOS and Android developers. Manage, boot, and terminate your iOS Simulators and Android Emulators instantly without ever opening Xcode or Android Studio.
 
+<div align="center">
+  <!-- TODO: Drop your beautiful app screenshots here! -->
+  <!-- <img src="screenshots/dashboard.png" width="45%" alt="V-Dock Dashboard"> -->
+  <!-- <img src="screenshots/menubar.png" width="45%" alt="V-Dock Menu Bar"> -->
+</div>
+
 ---
 
 ## ✨ Features
@@ -22,6 +28,7 @@ V-Dock is a lightning-fast, native macOS Menu Bar utility designed to streamline
 - 📌 **Pin Favorite Devices:** Pin your most frequently used devices directly to the top of the Menu Bar for zero-friction access.
 - 🥷 **Stealth Hybrid Mode:** V-Dock runs completely hidden in the background as a Menu Bar accessory. However, when you open the full Dashboard, it dynamically promotes itself to a regular macOS app complete with a Dock icon and global keyboard shortcuts.
 - 🎨 **Glassmorphism UI:** Built entirely in modern SwiftUI featuring a stunning, responsive, and translucent macOS HIG-compliant design.
+- 💎 **Cohesive Identity:** Custom AppKit iconography resizing ensures your branding stays pixel-perfect across the Menu Bar, Dock, and Settings pages.
 - ⌨️ **Native Shortcuts:** Deep macOS integration with raw `NSEvent` interceptors guarantees that shortcuts like `Cmd + Q`, `Cmd + W`, and `Cmd + ,` work flawlessly exactly when you expect them to.
 - ⚡ **Background Execution:** Utilizes Swift Concurrency (`Task.detached`) for non-blocking shell executions (e.g., `simctl` commands), keeping the UI buttery smooth.
 
@@ -93,5 +100,5 @@ Feel free to check [issues page](https://github.com/yourusername/V-Dock/issues).
 ---
 
 <div align="center">
-  <p>Built with ❤️ for Mobile Developers</p>
+  <p>Built with ❤️ for Community</p>
 </div>

@@ -7,9 +7,16 @@ struct DashboardSidebarView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 4) {
-                    Image(systemName: "display")
-                        .font(.title)
-                        .foregroundStyle(.tint)
+                    if let appIcon = NSImage(named: NSImage.applicationIconName) {
+                        Image(nsImage: appIcon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 48, height: 48)
+                    } else {
+                        Image(systemName: "display")
+                            .font(.title)
+                            .foregroundStyle(.tint)
+                    }
                     Text("V-Dock")
                         .font(.headline)
                     Text("Device Manager")
