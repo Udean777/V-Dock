@@ -56,3 +56,19 @@ extension SimulatorRepository: DeviceLifecycleProtocol {
         _ = try await shell.run("/usr/bin/pkill", args: ["-9", "Simulator"])
     }
 }
+
+extension SimulatorRepository: MediaCaptureProtocol {
+    func takeScreenshot(device: Device, destination: URL) async throws {
+        _ = try await shell.run("/usr/bin/xcrun", args: ["simctl", "io", device.id, "screenshot", destination.path])
+    }
+    
+    func startRecording(device: Device, destination: URL) async throws {
+        let processID = "record_ios_\(device.id)"
+        try await shell.spawn(id: processID, executable: "/usr/bin/xcrun", args: ["simctl", "io", device.id, "recordVideo", "--codec=h264", "--force", destination.path])
+    }
+    
+    func stopRecording(device: Device) async throws {
+        let processID = "record_ios_\(device.id)"
+        await shell.terminate(id: processID)
+    }
+}

@@ -7,6 +7,8 @@ struct DeviceCardView: View {
     let onTogglePin: () -> Void
     let onPerformAction: (DeviceAction) async -> Void
     
+    @Environment(AppState.self) var state
+    
     @State private var showWipeConfirm = false
     @State private var showColdBootConfirm = false
     
@@ -28,6 +30,28 @@ struct DeviceCardView: View {
                     ResourceBarView(usage: usage)
                         .padding(.top, 2)
                 }
+            }
+            
+            if device.status == .booted {
+                Button {
+                    Task { await state.takeScreenshot(for: device) }
+                } label: {
+                    Image(systemName: "camera")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Take Screenshot")
+                
+                let isRecording = state.recordingDeviceID == device.id
+                Button {
+                    Task { await state.toggleRecording(for: device) }
+                } label: {
+                    Image(systemName: isRecording ? "stop.circle.fill" : "record.circle")
+                        .foregroundStyle(isRecording ? .red : .secondary)
+                        .symbolEffect(.pulse, options: .repeating, isActive: isRecording)
+                }
+                .buttonStyle(.plain)
+                .help(isRecording ? "Stop Recording" : "Start Recording")
             }
             
             pinButton

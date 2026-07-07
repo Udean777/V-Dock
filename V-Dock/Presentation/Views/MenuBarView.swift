@@ -82,14 +82,15 @@ struct MenuBarView: View {
                     }
                     
                     // Pinned Devices Section
-                    if !state.pinnedDevices.isEmpty {
+                    let offlinePinned = state.pinnedDevices.filter { $0.status != .booted }
+                    if !offlinePinned.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Pinned Devices")
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                                 .foregroundStyle(.secondary)
                             
-                            ForEach(state.pinnedDevices) { device in
+                            ForEach(offlinePinned) { device in
                                 MenuBarDeviceRow(device: device, state: state)
                             }
                         }
@@ -224,6 +225,9 @@ struct MenuBarDeviceRow: View {
     let device: Device
     let state: AppState
     
+    @State private var showWipeConfirm = false
+    @State private var showColdBootConfirm = false
+    
     var body: some View {
         HStack {
             Image(systemName: device.platform == .ios ? "apple.logo" : "a.circle.fill")
@@ -242,13 +246,41 @@ struct MenuBarDeviceRow: View {
             
             Spacer()
             
+            if device.status == .booted {
+                Button {
+                    Task { await state.takeScreenshot(for: device) }
+                } label: {
+                    Image(systemName: "camera")
+                        .font(.caption)
+                        .padding(6)
+                        .background(Color.secondary.opacity(0.1), in: Circle())
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Take Screenshot")
+                
+                let isRecording = state.recordingDeviceID == device.id
+                Button {
+                    Task { await state.toggleRecording(for: device) }
+                } label: {
+                    Image(systemName: isRecording ? "stop.fill" : "record.circle")
+                        .font(.caption)
+                        .padding(6)
+                        .background(isRecording ? Color.red.opacity(0.2) : Color.secondary.opacity(0.1), in: Circle())
+                        .foregroundStyle(isRecording ? .red : .secondary)
+                        .symbolEffect(.pulse, options: .repeating, isActive: isRecording)
+                }
+                .buttonStyle(.plain)
+                .help(isRecording ? "Stop Recording" : "Start Recording")
+            }
+            
             Button {
                 let action: DeviceAction = device.status == .booted ? .shutdown : .boot
                 Task { await state.perform(action, on: device) }
             } label: {
-                Image(systemName: device.status == .booted ? "stop.fill" : "play.fill")
+                Image(systemName: device.status == .booted ? "power" : "play.fill")
                     .font(.caption)
-                    .padding(8)
+                    .padding(6)
                     .background(device.status == .booted ? Color.red.opacity(0.1) : Color.green.opacity(0.1), in: Circle())
                     .foregroundStyle(device.status == .booted ? .red : .green)
             }
@@ -257,5 +289,49 @@ struct MenuBarDeviceRow: View {
         }
         .padding(12)
         .background(Color(NSColor.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
+        .contextMenu {
+            if device.platform == .ios {
+                if device.status == .shutdown {
+                    Button("Boot", systemImage: "play") { Task { await state.perform(.boot, on: device) } }
+                } else {
+                    Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
+                    Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
+                    Divider()
+                    Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
+                }
+                Button("Erase All Content & Settings", systemImage: "trash", role: .destructive) { showWipeConfirm = true }
+            }
+            
+            if device.platform == .android {
+                if device.status == .shutdown {
+                    Button("Boot", systemImage: "play") { Task { await state.perform(.boot, on: device) } }
+                    Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
+                } else {
+                    Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
+                    Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
+                    Divider()
+                    Button("Cold Boot (Restart)", systemImage: "bolt.fill") { showColdBootConfirm = true }
+                }
+                Button("Wipe Data", systemImage: "trash", role: .destructive) { showWipeConfirm = true }
+            }
+        }
+        .destructiveActionAlert(
+            title: "Erase \(device.name)?",
+            message: device.platform == .ios
+                ? "This will permanently erase all content and settings on this simulator, including installed apps and their data."
+                : "This will wipe all user data on this emulator. The AVD configuration will remain intact.",
+            confirmLabel: device.platform == .ios ? "Erase All Content" : "Wipe Data",
+            isPresented: $showWipeConfirm
+        ) {
+            await state.perform(.wipeData, on: device)
+        }
+        .destructiveActionAlert(
+            title: "Cold Boot \(device.name)?",
+            message: "The device will be shut down and restarted from a clean state, discarding any saved snapshot.",
+            confirmLabel: "Cold Boot",
+            isPresented: $showColdBootConfirm
+        ) {
+            await state.perform(.coldBoot, on: device)
+        }
     }
 }
