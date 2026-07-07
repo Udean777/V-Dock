@@ -1,0 +1,96 @@
+name: Auto Build & Release
+
+on:
+  push:
+    branches:
+      - main # Otomatis trigger setiap kali ada kode yang masuk/di-merge ke branch main
+  workflow_dispatch: # Mengizinkan Anda menekan tombol "Run workflow" secara manual di GitHub
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Select Xcode Version
+      run: sudo xcode-select -s /Applications/Xcode_16.0.app
+
+    - name: Install create-dmg
+      run: brew install create-dmg
+
+    - name: Build and Archive (Unsigned)
+      run: |
+        xcodebuild clean archive \
+          -project V-Dock.xcodeproj \
+          -scheme V-Dock \
+          -configuration Release \
+          -archivePath $PWD/build/V-Dock.xcarchive \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+
+    - name: Create DMG
+      run: |
+        APP_PATH="build/V-Dock.xcarchive/Products/Applications/V-Dock.app"
+        APP_VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP_PATH/Contents/Info.plist")
+        
+        # Ekspor nama DMG dengan tambahan nomor run (contoh: V-Dock-v1.0-build-42.dmg)
+        DMG_NAME="V-Dock-v$APP_VERSION-build-${{ github.run_number }}-Unsigned.dmg"
+        echo "DMG_NAME=$DMG_NAME" >> $GITHUB_ENV
+        
+        create-dmg \
+          --volname "V-Dock Installer" \
+          --window-pos 200 120 \
+          --window-size 600 400 \
+          --icon-size 100 \
+          --icon "V-Dock.app" 150 190 \
+          --hide-extension "V-Dock.app" \
+          --app-drop-link 450 190 \
+          "$DMG_NAME" \
+          "$APP_PATH"
+
+    - name: Generate Install Guide
+      run: |
+        cat << 'EOF' > INSTALL_GUIDE.txt
+        =========================================================
+        ⚠️ IMPORTANT INSTALLATION GUIDE FOR V-DOCK
+        =========================================================
+        
+        Because this app is released as an "Unsigned" application, 
+        macOS Gatekeeper might show a scary error saying:
+        "V-Dock is damaged and can't be opened. You should move it to the Bin."
+        
+        Do not panic! The app is NOT damaged. This is just Apple's 
+        default security measure for apps without a paid developer signature.
+        
+        HOW TO FIX AND OPEN THE APP:
+        ---------------------------------------------------------
+        1. Open the downloaded DMG file.
+        2. Drag "V-Dock.app" into your "Applications" folder.
+        3. Open the "Terminal" app on your Mac (Cmd+Space -> type Terminal).
+        4. Copy and paste this exact command, then press Enter:
+        
+           xattr -cr /Applications/V-Dock.app
+        
+        5. (IMPORTANT for M1/M2/M3 Macs) Copy and paste this second command:
+        
+           codesign --force --deep -s - /Applications/V-Dock.app
+        
+        6. That's it! You can now open V-Dock from your Applications folder.
+        EOF
+
+    - name: Publish Dev Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: "dev-build-${{ github.run_number }}"
+        name: "Development Build #${{ github.run_number }}"
+        body: "Otomatis di-generate dari commit terbaru di branch main.\n\n**⚠️ PENTING:** Silakan baca file `INSTALL_GUIDE.txt` jika Anda mendapatkan error 'App is damaged' saat membukanya."
+        files: |
+          ${{ env.DMG_NAME }}
+          INSTALL_GUIDE.txt
+        prerelease: true
