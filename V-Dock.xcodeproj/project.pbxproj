@@ -6,27 +6,8 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXContainerItemProxy section */
-		D0E93E262FFCBCCD00CA0F7A /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = D0E93E0E2FFCBCCB00CA0F7A /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D0E93E152FFCBCCB00CA0F7A;
-			remoteInfo = "V-Dock";
-		};
-		D0E93E302FFCBCCD00CA0F7A /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = D0E93E0E2FFCBCCB00CA0F7A /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D0E93E152FFCBCCB00CA0F7A;
-			remoteInfo = "V-Dock";
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
 		D0E93E162FFCBCCB00CA0F7A /* V-Dock.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "V-Dock.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		D0E93E252FFCBCCD00CA0F7A /* V-DockTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "V-DockTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		D0E93E2F2FFCBCCD00CA0F7A /* V-DockUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "V-DockUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -35,34 +16,10 @@
 			path = "V-Dock";
 			sourceTree = "<group>";
 		};
-		D0E93E282FFCBCCD00CA0F7A /* V-DockTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "V-DockTests";
-			sourceTree = "<group>";
-		};
-		D0E93E322FFCBCCD00CA0F7A /* V-DockUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "V-DockUITests";
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		D0E93E132FFCBCCB00CA0F7A /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D0E93E222FFCBCCD00CA0F7A /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D0E93E2C2FFCBCCD00CA0F7A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -76,8 +33,6 @@
 			isa = PBXGroup;
 			children = (
 				D0E93E182FFCBCCB00CA0F7A /* V-Dock */,
-				D0E93E282FFCBCCD00CA0F7A /* V-DockTests */,
-				D0E93E322FFCBCCD00CA0F7A /* V-DockUITests */,
 				D0E93E172FFCBCCB00CA0F7A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -86,8 +41,6 @@
 			isa = PBXGroup;
 			children = (
 				D0E93E162FFCBCCB00CA0F7A /* V-Dock.app */,
-				D0E93E252FFCBCCD00CA0F7A /* V-DockTests.xctest */,
-				D0E93E2F2FFCBCCD00CA0F7A /* V-DockUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -117,52 +70,6 @@
 			productReference = D0E93E162FFCBCCB00CA0F7A /* V-Dock.app */;
 			productType = "com.apple.product-type.application";
 		};
-		D0E93E242FFCBCCD00CA0F7A /* V-DockTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = D0E93E3C2FFCBCCD00CA0F7A /* Build configuration list for PBXNativeTarget "V-DockTests" */;
-			buildPhases = (
-				D0E93E212FFCBCCD00CA0F7A /* Sources */,
-				D0E93E222FFCBCCD00CA0F7A /* Frameworks */,
-				D0E93E232FFCBCCD00CA0F7A /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				D0E93E272FFCBCCD00CA0F7A /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				D0E93E282FFCBCCD00CA0F7A /* V-DockTests */,
-			);
-			name = "V-DockTests";
-			packageProductDependencies = (
-			);
-			productName = "V-DockTests";
-			productReference = D0E93E252FFCBCCD00CA0F7A /* V-DockTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		D0E93E2E2FFCBCCD00CA0F7A /* V-DockUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = D0E93E3F2FFCBCCD00CA0F7A /* Build configuration list for PBXNativeTarget "V-DockUITests" */;
-			buildPhases = (
-				D0E93E2B2FFCBCCD00CA0F7A /* Sources */,
-				D0E93E2C2FFCBCCD00CA0F7A /* Frameworks */,
-				D0E93E2D2FFCBCCD00CA0F7A /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				D0E93E312FFCBCCD00CA0F7A /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				D0E93E322FFCBCCD00CA0F7A /* V-DockUITests */,
-			);
-			name = "V-DockUITests";
-			packageProductDependencies = (
-			);
-			productName = "V-DockUITests";
-			productReference = D0E93E2F2FFCBCCD00CA0F7A /* V-DockUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -175,14 +82,6 @@
 				TargetAttributes = {
 					D0E93E152FFCBCCB00CA0F7A = {
 						CreatedOnToolsVersion = 26.5;
-					};
-					D0E93E242FFCBCCD00CA0F7A = {
-						CreatedOnToolsVersion = 26.5;
-						TestTargetID = D0E93E152FFCBCCB00CA0F7A;
-					};
-					D0E93E2E2FFCBCCD00CA0F7A = {
-						CreatedOnToolsVersion = 26.5;
-						TestTargetID = D0E93E152FFCBCCB00CA0F7A;
 					};
 				};
 			};
@@ -201,28 +100,12 @@
 			projectRoot = "";
 			targets = (
 				D0E93E152FFCBCCB00CA0F7A /* V-Dock */,
-				D0E93E242FFCBCCD00CA0F7A /* V-DockTests */,
-				D0E93E2E2FFCBCCD00CA0F7A /* V-DockUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		D0E93E142FFCBCCB00CA0F7A /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D0E93E232FFCBCCD00CA0F7A /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D0E93E2D2FFCBCCD00CA0F7A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -239,37 +122,10 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D0E93E212FFCBCCD00CA0F7A /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D0E93E2B2FFCBCCD00CA0F7A /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		D0E93E272FFCBCCD00CA0F7A /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D0E93E152FFCBCCB00CA0F7A /* V-Dock */;
-			targetProxy = D0E93E262FFCBCCD00CA0F7A /* PBXContainerItemProxy */;
-		};
-		D0E93E312FFCBCCD00CA0F7A /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D0E93E152FFCBCCB00CA0F7A /* V-Dock */;
-			targetProxy = D0E93E302FFCBCCD00CA0F7A /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin XCBuildConfiguration section */
-		D0E93E372FFCBCCD00CA0F7A /* Debug */ = {
+		D0E93E372FFCBCCB00CA0F7A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -332,7 +188,7 @@
 			};
 			name = Debug;
 		};
-		D0E93E382FFCBCCD00CA0F7A /* Release */ = {
+		D0E93E382FFCBCCB00CA0F7A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -387,7 +243,7 @@
 			};
 			name = Release;
 		};
-		D0E93E3A2FFCBCCD00CA0F7A /* Debug */ = {
+		D0E93E3A2FFCBCCB00CA0F7A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -395,10 +251,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -417,7 +274,7 @@
 			};
 			name = Debug;
 		};
-		D0E93E3B2FFCBCCD00CA0F7A /* Release */ = {
+		D0E93E3B2FFCBCCB00CA0F7A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -425,10 +282,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -444,82 +302,6 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-			};
-			name = Release;
-		};
-		D0E93E3D2FFCBCCD00CA0F7A /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.5;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.ssajudn.V-DockTests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/V-Dock.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/V-Dock";
-			};
-			name = Debug;
-		};
-		D0E93E3E2FFCBCCD00CA0F7A /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.5;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.ssajudn.V-DockTests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/V-Dock.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/V-Dock";
-			};
-			name = Release;
-		};
-		D0E93E402FFCBCCD00CA0F7A /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.ssajudn.V-DockUITests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = "V-Dock";
-			};
-			name = Debug;
-		};
-		D0E93E412FFCBCCD00CA0F7A /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.ssajudn.V-DockUITests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = "V-Dock";
 			};
 			name = Release;
 		};
@@ -529,8 +311,8 @@
 		D0E93E112FFCBCCB00CA0F7A /* Build configuration list for PBXProject "V-Dock" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D0E93E372FFCBCCD00CA0F7A /* Debug */,
-				D0E93E382FFCBCCD00CA0F7A /* Release */,
+				D0E93E372FFCBCCB00CA0F7A /* Debug */,
+				D0E93E382FFCBCCB00CA0F7A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -538,26 +320,8 @@
 		D0E93E392FFCBCCD00CA0F7A /* Build configuration list for PBXNativeTarget "V-Dock" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D0E93E3A2FFCBCCD00CA0F7A /* Debug */,
-				D0E93E3B2FFCBCCD00CA0F7A /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		D0E93E3C2FFCBCCD00CA0F7A /* Build configuration list for PBXNativeTarget "V-DockTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				D0E93E3D2FFCBCCD00CA0F7A /* Debug */,
-				D0E93E3E2FFCBCCD00CA0F7A /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		D0E93E3F2FFCBCCD00CA0F7A /* Build configuration list for PBXNativeTarget "V-DockUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				D0E93E402FFCBCCD00CA0F7A /* Debug */,
-				D0E93E412FFCBCCD00CA0F7A /* Release */,
+				D0E93E3A2FFCBCCB00CA0F7A /* Debug */,
+				D0E93E3B2FFCBCCB00CA0F7A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

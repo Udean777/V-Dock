@@ -1,0 +1,89 @@
+import Foundation
+import Observation
+import ServiceManagement
+
+@MainActor
+@Observable
+final class AppState {
+    var devices: [Device] = []
+    var pinnedIDs: Set<String> = []
+    var resourceUsage: [String: ResourceUsage] = [:]
+    var isRefreshing = false
+    var isProcessingAction = false
+    var refreshError: String?
+    var androidSDKPath: String {
+        didSet {
+            UserDefaults.standard.set(androidSDKPath, forKey: "androidSDKPath")
+        }
+    }
+    var isLaunchAtLoginEnabled: Bool {
+        didSet {
+            try? isLaunchAtLoginEnabled
+            ? SMAppService.mainApp.register()
+            : SMAppService.mainApp.unregister()
+        }
+    }
+    
+    private let discoverUseCase: DiscoverDevicesUseCase
+    private let lifecycleUseCase: DeviceLifecycleUseCase
+    private let resourceUseCase: ResourceMonitorUseCase
+    
+    init(
+        discoverUseCase: DiscoverDevicesUseCase,
+        lifecycleUseCase: DeviceLifecycleUseCase,
+        resourceUseCase: ResourceMonitorUseCase
+    ) {
+        self.discoverUseCase = discoverUseCase
+        self.lifecycleUseCase = lifecycleUseCase
+        self.resourceUseCase = resourceUseCase
+        pinnedIDs = Set(UserDefaults.standard.stringArray(forKey: "pinnedIDs") ?? [])
+        androidSDKPath = UserDefaults.standard.string(forKey: "androidSDKPath") ?? ""
+        isLaunchAtLoginEnabled = SMAppService.mainApp.status == .enabled
+    }
+    
+    var hasAndroidSDK: Bool {
+        let candidates = [
+            UserDefaults.standard.string(forKey: "androidSDKPath"),
+            ProcessInfo.processInfo.environment["ANDROID_HOME"],
+            ProcessInfo.processInfo.environment["ANDROID_SDK_ROOT"],
+            "\(NSHomeDirectory())/Library/Android/sdk",
+        ]
+        return candidates.compactMap({ $0 }).contains { FileManager.default.fileExists(atPath: $0) }
+    }
+    
+    func refresh() async {
+        isRefreshing = true
+        refreshError = nil
+        let result = await discoverUseCase.execute()
+        devices = result.devices
+        if !result.errors.isEmpty {
+            refreshError = result.errors.joined(separator: "\n")
+        }
+        isRefreshing = false
+    }
+    
+    func perform(_ action: DeviceAction, on device: Device) async {
+        isProcessingAction = true
+        defer { isProcessingAction = false }
+        try? await lifecycleUseCase.execute(action, on: device)
+        await refresh()
+    }
+    
+    func togglePin(for device: Device) {
+        if pinnedIDs.contains(device.id) {
+            pinnedIDs.remove(device.id)
+        } else {
+            pinnedIDs.insert(device.id)
+        }
+        UserDefaults.standard.set(Array(pinnedIDs), forKey: "pinnedIDs")
+    }
+    
+    func refreshResources() async {
+        let booted = devices.filter { $0.status == .booted }
+        resourceUsage = (try? await resourceUseCase.execute(bootedDevices: booted)) ?? [:]
+    }
+    
+    var pinnedDevices: [Device] {
+        devices.filter { pinnedIDs.contains($0.id) }
+    }
+}
