@@ -1,0 +1,29 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+    authors:
+      - dependabot[bot]
+  categories:
+    - title: 🚀 New Features & Enhancements
+      labels:
+        - enhancement
+        - feature
+    - title: 🐛 Bug Fixes
+      labels:
+        - bug
+        - fix
+    - title: 🛠 Under the Hood (Architecture & Refactoring)
+      labels:
+        - refactor
+        - architecture
+    - title: 📖 Documentation
+      labels:
+        - documentation
+        - docs
+    - title: 📦 Dependency Updates
+      labels:
+        - dependencies
+    - title: 🔀 Other Changes
+      labels:
+        - "*"

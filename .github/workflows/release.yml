@@ -1,0 +1,42 @@
+name: Build and Release macOS App
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger workflow on tags like v1.0.0, v1.2, etc.
+
+jobs:
+  build_and_release:
+    name: Build & Publish Release
+    runs-on: macos-14 # Ensures we are running on a macOS environment with Xcode 15+
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
+
+      - name: Build macOS App
+        run: |
+          xcodebuild -scheme V-Dock \
+            -project V-Dock.xcodeproj \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Zip the Application
+        run: |
+          cd build/Build/Products/Release
+          zip -r ../../../../V-Dock.app.zip V-Dock.app
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: V-Dock.app.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
