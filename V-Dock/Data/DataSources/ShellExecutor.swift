@@ -87,4 +87,50 @@ final class ShellExecutor: Sendable {
     func terminate(id: String) async {
         await tracker.interrupt(id: id)
     }
+    
+    func stream(id: String, executable: String, args: [String]) -> AsyncStream<String> {
+        AsyncStream { continuation in
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: executable)
+            process.arguments = args
+            
+            let pipe = Pipe()
+            process.standardOutput = pipe
+            process.standardError = pipe
+            
+            let fileHandle = pipe.fileHandleForReading
+            
+            fileHandle.readabilityHandler = { fh in
+                let data = fh.availableData
+                if data.isEmpty {
+                    fh.readabilityHandler = nil
+                    continuation.finish()
+                    return
+                }
+                if let str = String(data: data, encoding: .utf8) {
+                    let lines = str.components(separatedBy: .newlines)
+                    for line in lines where !line.isEmpty {
+                        continuation.yield(line)
+                    }
+                }
+            }
+            
+            continuation.onTermination = { @Sendable _ in
+                fileHandle.readabilityHandler = nil
+                process.terminate()
+                Task {
+                    await self.tracker.remove(id: id)
+                }
+            }
+            
+            do {
+                try process.run()
+                Task {
+                    await self.tracker.store(process, id: id)
+                }
+            } catch {
+                continuation.finish()
+            }
+        }
+    }
 }
