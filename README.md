@@ -26,6 +26,10 @@ V-Dock is a lightning-fast, native macOS Menu Bar utility designed to streamline
 
 - 🚀 **One-Click Boot & Shutdown:** Start or stop any iOS Simulator or Android Emulator instantly from your Menu Bar.
 - 📌 **Pin Favorite Devices:** Pin your most frequently used devices directly to the top of the Menu Bar for zero-friction access.
+- 🧹 **Factory Reset & Cold Boot:** Wipe simulator data or perform a cold boot on Android emulators instantly without opening your IDE.
+- 📸 **Quick Media Capture:** Take screenshots or screen recordings of the active device and save them straight to your Desktop with one click.
+- 🌙 **Appearance Toggles:** Instantly switch your running devices between Dark Mode and Light Mode directly from the context menu.
+- 🛠 **Mini Logcat Viewer:** A dedicated, native macOS window that streams logs in real-time (`adb logcat` / `simctl log`), featuring syntax highlighting, auto-scroll, and live filtering.
 - 🥷 **Stealth Hybrid Mode:** V-Dock runs completely hidden in the background as a Menu Bar accessory. However, when you open the full Dashboard, it dynamically promotes itself to a regular macOS app complete with a Dock icon and global keyboard shortcuts.
 - 🎨 **Glassmorphism UI:** Built entirely in modern SwiftUI featuring a stunning, responsive, and translucent macOS HIG-compliant design.
 - 💎 **Cohesive Identity:** Custom AppKit iconography resizing ensures your branding stays pixel-perfect across the Menu Bar, Dock, and Settings pages.

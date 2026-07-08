@@ -3,31 +3,23 @@ import SwiftUI
 struct StatusBadgeView: View {
     let status: DeviceStatus
     
-    @State private var isAnimating = false
-    
     var body: some View {
         HStack(spacing: 4) {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-                .opacity(status == .booted ? (isAnimating ? 1 : 0.4) : 0.5)
-                .animation(status == .booted ? .easeInOut(duration: 1).repeatForever(autoreverses: true) : .default, value: isAnimating)
+            if status == .booted {
+                Image(systemName: "circle.fill")
+                    .resizable()
+                    .frame(width: 8, height: 8)
+                    .foregroundStyle(color)
+                    .symbolEffect(.pulse, options: .repeating)
+            } else {
+                Circle()
+                    .fill(color)
+                    .frame(width: 8, height: 8)
+                    .opacity(0.5)
+            }
             Text(label)
                 .font(.caption)
                 .foregroundStyle(color)
-        }
-        .onAppear {
-            isAnimating = (status == .booted)
-        }
-        .onChange(of: status) { _, newValue in
-            if newValue == .booted {
-                isAnimating = false
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    isAnimating = true
-                }
-            } else {
-                isAnimating = false
-            }
         }
     }
     

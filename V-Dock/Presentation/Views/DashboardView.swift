@@ -29,6 +29,14 @@ struct DashboardView: View {
                 try? await Task.sleep(nanoseconds: 5_000_000_000)
             }
         }
+        .alert("Action Failed", isPresented: Binding(
+            get: { state.actionError != nil },
+            set: { if !$0 { state.actionError = nil } }
+        )) {
+            Button("OK", role: .cancel) { state.actionError = nil }
+        } message: {
+            Text(state.actionError ?? "")
+        }
     }
 }
 

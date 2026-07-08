@@ -6,6 +6,25 @@ enum ShellError: Error {
 }
 
 final class ShellExecutor: Sendable {
+    private let tracker = ProcessTracker()
+    
+    actor ProcessTracker {
+        private var runningProcesses: [String: Process] = [:]
+        
+        func store(_ process: Process, id: String) {
+            runningProcesses[id] = process
+        }
+        
+        func remove(id: String) {
+            runningProcesses.removeValue(forKey: id)
+        }
+        
+        func interrupt(id: String) {
+            runningProcesses[id]?.interrupt()
+            runningProcesses.removeValue(forKey: id)
+        }
+    }
+    
     func run(_ executable: String, args: [String]) async throws -> String {
         return try await Task.detached {
             let process = Process()
@@ -55,5 +74,17 @@ final class ShellExecutor: Sendable {
         process.executableURL = URL(fileURLWithPath: executable)
         process.arguments = args
         try process.run()
+    }
+    
+    func spawn(id: String, executable: String, args: [String]) async throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executable)
+        process.arguments = args
+        try process.run()
+        await tracker.store(process, id: id)
+    }
+    
+    func terminate(id: String) async {
+        await tracker.interrupt(id: id)
     }
 }

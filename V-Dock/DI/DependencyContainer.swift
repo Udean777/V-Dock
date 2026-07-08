@@ -14,11 +14,26 @@ final class DependencyContainer {
             androidLifecycle: androidRepo
         )
         let resourceUseCase = ResourceMonitorUseCase(monitor: MacOSResourceMonitor(shell: shell))
+        let mediaCaptureUseCase = MediaCaptureUseCase(
+            iosCapture: simulatorRepo,
+            androidCapture: androidRepo
+        )
+        let quickTogglesUseCase = QuickTogglesUseCase(
+            iosToggles: simulatorRepo,
+            androidToggles: androidRepo
+        )
+        let logStreamUseCase = LogStreamUseCase(
+            iosStream: simulatorRepo,
+            androidStream: androidRepo
+        )
         
         appState = AppState(
             discoverUseCase: discoverUseCase,
             lifecycleUseCase: lifecycleUseCase,
-            resourceUseCase: resourceUseCase
+            resourceUseCase: resourceUseCase,
+            mediaCaptureUseCase: mediaCaptureUseCase,
+            quickTogglesUseCase: quickTogglesUseCase,
+            logStreamUseCase: logStreamUseCase
         )
     }
 }

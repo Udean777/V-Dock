@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import ServiceManagement
+import AppKit
 
 @MainActor
 @Observable
@@ -11,6 +12,8 @@ final class AppState {
     var isRefreshing = false
     var isProcessingAction = false
     var refreshError: String?
+    var actionError: String?
+    var recordingDeviceID: String?
     var androidSDKPath: String {
         didSet {
             UserDefaults.standard.set(androidSDKPath, forKey: "androidSDKPath")
@@ -27,15 +30,24 @@ final class AppState {
     private let discoverUseCase: DiscoverDevicesUseCase
     private let lifecycleUseCase: DeviceLifecycleUseCase
     private let resourceUseCase: ResourceMonitorUseCase
+    private let mediaCaptureUseCase: MediaCaptureUseCase
+    private let quickTogglesUseCase: QuickTogglesUseCase
+    let logStreamUseCase: LogStreamUseCase
     
     init(
         discoverUseCase: DiscoverDevicesUseCase,
         lifecycleUseCase: DeviceLifecycleUseCase,
-        resourceUseCase: ResourceMonitorUseCase
+        resourceUseCase: ResourceMonitorUseCase,
+        mediaCaptureUseCase: MediaCaptureUseCase,
+        quickTogglesUseCase: QuickTogglesUseCase,
+        logStreamUseCase: LogStreamUseCase
     ) {
         self.discoverUseCase = discoverUseCase
         self.lifecycleUseCase = lifecycleUseCase
         self.resourceUseCase = resourceUseCase
+        self.mediaCaptureUseCase = mediaCaptureUseCase
+        self.quickTogglesUseCase = quickTogglesUseCase
+        self.logStreamUseCase = logStreamUseCase
         pinnedIDs = Set(UserDefaults.standard.stringArray(forKey: "pinnedIDs") ?? [])
         androidSDKPath = UserDefaults.standard.string(forKey: "androidSDKPath") ?? ""
         isLaunchAtLoginEnabled = SMAppService.mainApp.status == .enabled
@@ -64,8 +76,14 @@ final class AppState {
     
     func perform(_ action: DeviceAction, on device: Device) async {
         isProcessingAction = true
+        actionError = nil
         defer { isProcessingAction = false }
-        try? await lifecycleUseCase.execute(action, on: device)
+        
+        do {
+            try await lifecycleUseCase.execute(action, on: device)
+        } catch {
+            actionError = "Failed to \(action): \(error.localizedDescription)"
+        }
         await refresh()
     }
     
@@ -85,5 +103,79 @@ final class AppState {
     
     var pinnedDevices: [Device] {
         devices.filter { pinnedIDs.contains($0.id) }
+    }
+    
+    private func getDesktopURL(filename: String) -> URL {
+        let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
+        return desktop.appendingPathComponent(filename)
+    }
+    
+    private var timestamp: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        return formatter.string(from: Date())
+    }
+    
+    func takeScreenshot(for device: Device) async {
+        isProcessingAction = true
+        actionError = nil
+        defer { isProcessingAction = false }
+        
+        let filename = "V-Dock_\(device.name.replacingOccurrences(of: " ", with: ""))_\(timestamp).png"
+        let dest = getDesktopURL(filename: filename)
+        
+        do {
+            try await mediaCaptureUseCase.takeScreenshot(device: device, destination: dest)
+            NSSound(named: "Purr")?.play() // Feedback suara macOS bawaan
+        } catch {
+            actionError = "Failed to take screenshot: \(error.localizedDescription)"
+        }
+    }
+    
+    func toggleRecording(for device: Device) async {
+        if recordingDeviceID == device.id {
+            // Stop recording
+            recordingDeviceID = nil
+            do {
+                try await mediaCaptureUseCase.stopRecording(device: device)
+                NSSound(named: "Glass")?.play()
+            } catch {
+                actionError = "Failed to stop recording: \(error.localizedDescription)"
+            }
+        } else {
+            // Ensure any existing recording is stopped first (only 1 at a time)
+            if let existingID = recordingDeviceID, let existingDevice = devices.first(where: { $0.id == existingID }) {
+                try? await mediaCaptureUseCase.stopRecording(device: existingDevice)
+            }
+            
+            // Start recording
+            let filename = "V-Dock_\(device.name.replacingOccurrences(of: " ", with: ""))_\(timestamp).mp4"
+            let dest = getDesktopURL(filename: filename)
+            
+            do {
+                try await mediaCaptureUseCase.startRecording(device: device, destination: dest)
+                recordingDeviceID = device.id
+                NSSound(named: "Tink")?.play()
+            } catch {
+                actionError = "Failed to start recording: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func setDarkMode(for device: Device, isDark: Bool) async {
+        isProcessingAction = true
+        actionError = nil
+        defer { isProcessingAction = false }
+        
+        do {
+            try await quickTogglesUseCase.setDarkMode(device: device, isDark: isDark)
+            NSSound(named: "Pop")?.play()
+        } catch {
+            actionError = "Failed to toggle appearance: \(error.localizedDescription)"
+        }
+    }
+    
+    func openLogcat(for device: Device) {
+        NotificationCenter.default.post(name: NSNotification.Name("OpenLogcat"), object: device)
     }
 }
