@@ -22,19 +22,65 @@ V-Dock is a lightning-fast, native macOS Menu Bar utility designed to streamline
 
 ---
 
-## ✨ Features
+## ✨ Highlight Features & How to Use
 
-- 🚀 **One-Click Boot & Shutdown:** Start or stop any iOS Simulator or Android Emulator instantly from your Menu Bar.
-- 📌 **Pin Favorite Devices:** Pin your most frequently used devices directly to the top of the Menu Bar for zero-friction access.
-- 🧹 **Factory Reset & Cold Boot:** Wipe simulator data or perform a cold boot on Android emulators instantly without opening your IDE.
-- 📸 **Quick Media Capture:** Take screenshots or screen recordings of the active device and save them straight to your Desktop with one click.
-- 🌙 **Appearance Toggles:** Instantly switch your running devices between Dark Mode and Light Mode directly from the context menu.
-- 🛠 **Mini Logcat Viewer:** A dedicated, native macOS window that streams logs in real-time (`adb logcat` / `simctl log`), featuring syntax highlighting, auto-scroll, and live filtering.
-- 🥷 **Stealth Hybrid Mode:** V-Dock runs completely hidden in the background as a Menu Bar accessory. However, when you open the full Dashboard, it dynamically promotes itself to a regular macOS app complete with a Dock icon and global keyboard shortcuts.
-- 🎨 **Glassmorphism UI:** Built entirely in modern SwiftUI featuring a stunning, responsive, and translucent macOS HIG-compliant design.
-- 💎 **Cohesive Identity:** Custom AppKit iconography resizing ensures your branding stays pixel-perfect across the Menu Bar, Dock, and Settings pages.
-- ⌨️ **Native Shortcuts:** Deep macOS integration with raw `NSEvent` interceptors guarantees that shortcuts like `Cmd + Q`, `Cmd + W`, and `Cmd + ,` work flawlessly exactly when you expect them to.
-- ⚡ **Background Execution:** Utilizes Swift Concurrency (`Task.detached`) for non-blocking shell executions (e.g., `simctl` commands), keeping the UI buttery smooth.
+### 🚀 Menu Bar Mastery
+
+V-Dock lives quietly in your macOS Menu Bar. Click the V-Dock icon to reveal all your iOS Simulators and Android Emulators.
+
+- **One-Click Boot & Shutdown:** Click the power icon next to any device to boot or terminate it instantly.
+- **Pin Favorite Devices:** Right-click a device and select "Pin" so your daily drivers always stay at the very top.
+
+<img src="assets/menubar.png" width="600" alt="Menu Bar Mastery">
+
+---
+
+### 🛠 Context Actions (Right-Click Menu)
+
+Right-click any **active** device to unlock a suite of powerful developer tools right from the Menu Bar:
+
+#### 1. 🛠 Mini Logcat / Console Viewer
+
+Stream device logs directly into a beautiful, native macOS window without opening Android Studio or Xcode.
+
+- **How to use:** Right-click an active device ➔ **Show Logcat**.
+- **Features:** Real-time streaming, syntax highlighting (Errors/Warnings), auto-scrolling, and live search filtering.
+
+<img src="assets/logcat.png" width="600" alt="Mini Logcat Viewer">
+
+#### 2. 📸 Quick Media Capture
+
+Need to share a bug or UI preview with your team? Capture it instantly.
+
+- **How to use:** Right-click an active device ➔ **Take Screenshot** or **Record Screen**.
+- **Result:** The media file is automatically captured and saved directly to your Mac's Desktop.
+
+<img src="assets/screenshot.png" width="600" alt="Media Capture">
+
+#### 3. 🌙 Appearance Toggles
+
+Test your app's UI in both dark and light themes effortlessly.
+
+- **How to use:** Right-click an active device ➔ **Appearance** ➔ **Dark Mode** or **Light Mode**.
+- **Result:** The emulator/simulator instantly forces the OS-level theme change.
+
+<img src="assets/mode%20toggles.png" width="600" alt="Appearance Toggle">
+
+#### 4. 🧹 Factory Reset & Cold Boot
+
+Start fresh without digging through deeply nested simulator settings or Xcode's device manager.
+
+- **How to use:** Right-click an _inactive_ device ➔ **Erase Data** (iOS) or **Cold Boot** (Android).
+
+<img src="assets/contextmenu-cold-boot.png" width="600" alt="Factory Reset">
+
+---
+
+### 🥷 Under The Hood
+
+- **Stealth Hybrid Mode:** V-Dock runs completely hidden in the background as a Menu Bar accessory (`.accessory`). However, when you open the full Dashboard, it dynamically promotes itself to a regular macOS app (`.regular`) complete with a Dock icon and global keyboard shortcuts.
+- **Native Shortcuts:** Deep macOS integration with raw `NSEvent` interceptors guarantees that shortcuts like `Cmd + Q`, `Cmd + W`, and `Cmd + ,` work flawlessly.
+- **Background Execution:** Utilizes Swift Concurrency (`Task.detached`) for non-blocking shell executions (e.g., `simctl` commands), keeping the UI buttery smooth.
 
 ---
 
