@@ -122,30 +122,28 @@ struct DeviceCardView: View {
                     }
                     Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
                     Divider()
-                    Button("Mirror Screen", systemImage: "display") { state.openMirror(for: device) }
-                    Divider()
                     Button("Cold Boot (Restart)", systemImage: "bolt.fill") { showColdBootConfirm = true }
                 }
                 Button("Wipe Data", systemImage: "trash", role: .destructive) { showWipeConfirm = true }
             }
         }
-        .destructiveActionAlert(
-            title: "Erase \(device.name)?",
-            message: device.platform == .ios
-            ? "This will permanently erase all content and settings on this simulator, including installed apps and their data."
-            : "This will wipe all user data on this emulator. The AVD configuration will remain intact.",
-            confirmLabel: device.platform == .ios ? "Erase All Content" : "Wipe Data",
-            isPresented: $showWipeConfirm
-        ) {
-            await onPerformAction(.wipeData)
+        .alert("Erase \(device.name)?", isPresented: $showWipeConfirm) {
+            Button(device.platform == .ios ? "Erase All Content" : "Wipe Data", role: .destructive) {
+                Task { await onPerformAction(.wipeData) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(device.platform == .ios
+                ? "This will permanently erase all content and settings on this simulator, including installed apps and their data."
+                : "This will wipe all user data on this emulator. The AVD configuration will remain intact.")
         }
-        .destructiveActionAlert(
-            title: "Cold Boot \(device.name)?",
-            message: "The device will be shut down and restarted from a clean state, discarding any saved snapshot.",
-            confirmLabel: "Cold Boot",
-            isPresented: $showColdBootConfirm
-        ) {
-            await onPerformAction(.coldBoot)
+        .alert("Cold Boot \(device.name)?", isPresented: $showColdBootConfirm) {
+            Button("Cold Boot", role: .destructive) {
+                Task { await onPerformAction(.coldBoot) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The device will be shut down and restarted from a clean state, discarding any saved snapshot.")
         }
         .onAppear {
             if pushFileVM == nil {

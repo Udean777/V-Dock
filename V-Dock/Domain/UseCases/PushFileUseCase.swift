@@ -10,8 +10,14 @@ final class PushFileUseCase: Sendable {
         self.iosRepo = iosRepo
     }
     
-    func execute(device: Device, filePath: URL, bundleId: String? = nil) async throws {
+    func execute(device: Device, filePath: URL, bundleId: String? = nil) async throws -> Bool {
         let repo = device.platform == .ios ? iosRepo : androidRepo
+        let ext = filePath.pathExtension.lowercased()
+        
+        if ext == "apk" || ext == "app" {
+            try await repo.installApp(to: device, appPath: filePath)
+            return true // indicates an app was installed
+        }
         
         if isMediaFile(filePath) {
             do {
@@ -23,6 +29,7 @@ final class PushFileUseCase: Sendable {
         } else {
             try await repo.pushDocument(to: device, filePath: filePath, bundleId: bundleId)
         }
+        return false // indicates a file was pushed
     }
     
     private func isMediaFile(_ url: URL) -> Bool {

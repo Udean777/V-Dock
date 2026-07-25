@@ -19,4 +19,5 @@ enum PushFileError: LocalizedError {
 protocol PushFileProtocol: Sendable {
     func pushMedia(to device: Device, filePath: URL) async throws
     func pushDocument(to device: Device, filePath: URL, bundleId: String?) async throws
+    func installApp(to device: Device, appPath: URL) async throws
 }

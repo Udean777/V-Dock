@@ -56,4 +56,16 @@ final class IOSSimulatorPushFileRepository: PushFileProtocol {
             throw PushFileError.fileTransferFailed(error.localizedDescription)
         }
     }
+    
+    func installApp(to device: Device, appPath: URL) async throws {
+        guard device.platform == .ios else { throw PushFileError.unsupportedPlatform }
+        
+        do {
+            _ = try await executor.run("/usr/bin/xcrun", args: ["simctl", "install", device.id, appPath.path])
+        } catch let ShellError.nonZeroExit(_, stderr) {
+            throw PushFileError.fileTransferFailed(stderr)
+        } catch {
+            throw PushFileError.fileTransferFailed(error.localizedDescription)
+        }
+    }
 }

@@ -54,7 +54,8 @@ final class WirelessADBRepository: DeviceRepositoryProtocol, @unchecked Sendable
             return Device(
                 id: serial, name: serial,
                 platform: .android, status: .booted,
-                connectionType: isWireless ? .wireless : .local
+                connectionType: isWireless ? .wireless : .local,
+                isPhysical: true
             )
         }
     }

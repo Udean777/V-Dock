@@ -49,7 +49,12 @@ extension SimulatorRepository: DeviceLifecycleProtocol {
     }
     
     func wipeData(device: Device) async throws {
+        _ = try await shell.run("/usr/bin/xcrun", args: ["simctl", "shutdown", device.id])
+        try await Task.sleep(nanoseconds: 1_000_000_000)
         _ = try await shell.run("/usr/bin/xcrun", args: ["simctl", "erase", device.id])
+        _ = try await shell.run("/usr/bin/xcrun", args: ["simctl", "boot", device.id])
+        try shell.runDetached("/usr/bin/open", args: ["-a", "Simulator"])
+        _ = try? await shell.run("/usr/bin/xcrun", args: ["simctl", "launch", device.id, "com.apple.springboard"])
     }
     
     func forceKill(device: Device) async throws {
@@ -86,13 +91,3 @@ extension SimulatorRepository: LogStreamProtocol {
     }
 }
 
-extension SimulatorRepository: NetworkProxyProtocol {
-    func setProxy(device: Device, host: String, port: Int) async throws {
-        // Note: iOS Simulator proxy settings require manual profile installation in this MVP.
-        print("Setting proxy on iOS Simulator requires installing a .mobileconfig or setting it manually to \(host):\(port)")
-    }
-    
-    func clearProxy(device: Device) async throws {
-        print("Clearing proxy on iOS Simulator.")
-    }
-}

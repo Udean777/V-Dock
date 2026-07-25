@@ -63,4 +63,17 @@ final class AndroidPushFileRepository: PushFileProtocol {
             throw PushFileError.fileTransferFailed(error.localizedDescription)
         }
     }
+    
+    func installApp(to device: Device, appPath: URL) async throws {
+        guard device.platform == .android else { throw PushFileError.unsupportedPlatform }
+        guard let adb = adbPath else { throw PushFileError.fileTransferFailed("adb executable not found.") }
+        
+        do {
+            _ = try await executor.run(adb, args: ["-e", "install", "-r", appPath.path])
+        } catch let ShellError.nonZeroExit(_, stderr) {
+            throw PushFileError.fileTransferFailed(stderr)
+        } catch {
+            throw PushFileError.fileTransferFailed(error.localizedDescription)
+        }
+    }
 }

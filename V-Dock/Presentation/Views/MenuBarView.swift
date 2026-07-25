@@ -163,16 +163,6 @@ struct MenuBarView: View {
                 openLogcatWindow(for: device)
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OpenNetworkSniffer"))) { notification in
-            if let device = notification.object as? Device {
-                openNetworkSnifferWindow(for: device)
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OpenScreenMirror"))) { notification in
-            if let device = notification.object as? Device {
-                openMirrorWindow(for: device)
-            }
-        }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OpenPairing"))) { _ in
             openPairingWindow()
         }
@@ -257,64 +247,6 @@ struct MenuBarView: View {
         NSApp.activate(ignoringOtherApps: true)
     }
     
-    private func openNetworkSnifferWindow(for device: Device) {
-        NSApp.setActivationPolicy(.regular)
-        
-        let windowTitle = "Network Sniffer: \(device.name)"
-        if let window = NSApp.windows.first(where: { $0.title == windowTitle }) {
-            window.makeKeyAndOrderFront(nil)
-            window.orderFrontRegardless()
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-        
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1000, height: 700),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
-            backing: .buffered, defer: false)
-        window.center()
-        window.title = windowTitle
-        window.isRestorable = false
-        window.isReleasedWhenClosed = false
-        
-        window.contentView = NSHostingView(rootView: NetworkSnifferView(device: device).environment(state))
-        
-        setupWindowObserver(for: window)
-        
-        window.makeKeyAndOrderFront(nil)
-        window.orderFrontRegardless()
-        NSApp.activate(ignoringOtherApps: true)
-    }
-    
-    private func openMirrorWindow(for device: Device) {
-        NSApp.setActivationPolicy(.regular)
-        
-        let windowTitle = "Mirror: \(device.name)"
-        if let window = NSApp.windows.first(where: { $0.title == windowTitle }) {
-            window.makeKeyAndOrderFront(nil)
-            window.orderFrontRegardless()
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-        
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 1000),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
-            backing: .buffered, defer: false)
-        window.center()
-        window.title = windowTitle
-        window.isRestorable = false
-        window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: ScreenMirrorView(device: device).environment(state)
-        )
-        
-        setupWindowObserver(for: window)
-        
-        window.makeKeyAndOrderFront(nil)
-        window.orderFrontRegardless()
-        NSApp.activate(ignoringOtherApps: true)
-    }
-    
     private func openPairingWindow() {
         NSApp.setActivationPolicy(.regular)
 
@@ -348,7 +280,7 @@ struct MenuBarView: View {
     private func setupWindowObserver(for window: NSWindow) {
         NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { _ in
             let remainingWindows = NSApp.windows.filter {
-                $0 != window && $0.isVisible && ($0.title == "Dashboard" || $0.title == "Devices" || $0.title == "Settings" || $0.title.hasPrefix("Logcat: ") || $0.title.hasPrefix("Network Sniffer: ") || $0.title.hasPrefix("Mirror: ") || $0.title == "Pair Wireless Device")
+                $0 != window && $0.isVisible && ($0.title == "Dashboard" || $0.title == "Devices" || $0.title == "Settings" || $0.title.hasPrefix("Logcat: ") || $0.title == "Pair Wireless Device")
             }
             if remainingWindows.isEmpty {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -363,8 +295,6 @@ struct MenuBarDeviceRow: View {
     let device: Device
     let state: AppState
     
-    @State private var showWipeConfirm = false
-    @State private var showColdBootConfirm = false
     @State private var pushFileVM: PushFileViewModel?
     @State private var isTargetedForDrop = false
     
@@ -467,23 +397,21 @@ struct MenuBarDeviceRow: View {
                     Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
                     Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
                     Divider()
-                    Button("Mirror Screen", systemImage: "display") { state.openMirror(for: device) }
                     Menu("Appearance", systemImage: "paintbrush") {
                         Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
                         Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
                     }
                     Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
-                    Button("Network Sniffer", systemImage: "network") { state.openNetworkSniffer(for: device) }
                     Divider()
-                    Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
+                    Button("Cold Boot", systemImage: "bolt") { confirmColdBoot() }
                 }
-                Button("Erase All Content & Settings", systemImage: "trash", role: .destructive) { showWipeConfirm = true }
+                Button("Erase All Content & Settings", systemImage: "trash", role: .destructive) { confirmWipe() }
             }
             
             if device.platform == .android {
                 if device.status == .shutdown {
                     Button("Boot", systemImage: "play") { Task { await state.perform(.boot, on: device) } }
-                    Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
+                    Button("Cold Boot", systemImage: "bolt") { confirmColdBoot() }
                 } else {
                     Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
                     Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
@@ -493,36 +421,49 @@ struct MenuBarDeviceRow: View {
                         Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
                     }
                     Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
-                    Button("Network Sniffer", systemImage: "network") { state.openNetworkSniffer(for: device) }
                     Divider()
-                    Button("Mirror Screen", systemImage: "display") { state.openMirror(for: device) }
-                    Divider()
-                    Button("Cold Boot (Restart)", systemImage: "bolt.fill") { showColdBootConfirm = true }
+                    Button("Cold Boot (Restart)", systemImage: "bolt.fill") { confirmColdBoot() }
                 }
-                Button("Wipe Data", systemImage: "trash", role: .destructive) { showWipeConfirm = true }
+                Button("Wipe Data", systemImage: "trash", role: .destructive) { confirmWipe() }
             }
-        }
-        .destructiveActionAlert(
-            title: "Erase \(device.name)?",
-            message: device.platform == .ios
-            ? "This will permanently erase all content and settings on this simulator, including installed apps and their data."
-            : "This will wipe all user data on this emulator. The AVD configuration will remain intact.",
-            confirmLabel: device.platform == .ios ? "Erase All Content" : "Wipe Data",
-            isPresented: $showWipeConfirm
-        ) {
-            await state.perform(.wipeData, on: device)
-        }
-        .destructiveActionAlert(
-            title: "Cold Boot \(device.name)?",
-            message: "The device will be shut down and restarted from a clean state, discarding any saved snapshot.",
-            confirmLabel: "Cold Boot",
-            isPresented: $showColdBootConfirm
-        ) {
-            await state.perform(.coldBoot, on: device)
         }
         .onAppear {
             if pushFileVM == nil {
                 pushFileVM = PushFileViewModel(useCase: state.pushFileUseCase)
+            }
+        }
+    }
+    
+    private func confirmWipe() {
+        let alert = NSAlert()
+        alert.messageText = "Erase \(device.name)?"
+        alert.informativeText = device.platform == .ios
+            ? "This will permanently erase all content and settings on this simulator, including installed apps and their data."
+            : "This will wipe all user data on this emulator. The AVD configuration will remain intact."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: device.platform == .ios ? "Erase All Content" : "Wipe Data")
+        alert.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            Task {
+                await state.perform(.wipeData, on: device)
+            }
+        }
+    }
+    
+    private func confirmColdBoot() {
+        let alert = NSAlert()
+        alert.messageText = "Cold Boot \(device.name)?"
+        alert.informativeText = "The device will be shut down and restarted from a clean state, discarding any saved snapshot."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Cold Boot")
+        alert.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            Task {
+                await state.perform(.coldBoot, on: device)
             }
         }
     }

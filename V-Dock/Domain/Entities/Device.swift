@@ -22,4 +22,5 @@ struct Device: Identifiable, Sendable {
     let platform: DevicePlatform
     let status: DeviceStatus
     var connectionType: ConnectionType = .local
+    var isPhysical: Bool = false
 }

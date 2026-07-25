@@ -35,6 +35,17 @@ V-Dock lives quietly in your macOS Menu Bar. Click the V-Dock icon to reveal all
 
 ---
 
+### 📤 Cross-Platform File Transfer & App Installer (Drag & Drop)
+
+Push media, documents, and even install apps seamlessly to both iOS Simulators and Android Emulators using an intuitive Drag & Drop interface or the built-in file picker.
+
+- **Bulk Upload & Install:** Select or drag multiple files and apps at once. V-Dock processes them concurrently.
+- **Auto App Installation:** Drop an `.apk` (Android) or `.app` (iOS Simulator build) and V-Dock will automatically install it on the device!
+- **Smart Routing & Fallback:** Automatically routes media (.png, .jpg, .mp4) to the native Photos/Gallery apps. Unsupported formats (like `.webp`) or documents (.pdf, .txt) are intelligently diverted straight to the local Files app (iOS "On My iPhone" / Android "Downloads").
+- **How to use:** Simply Drag & Drop files or apps onto any running device card in the Menu Bar or Dashboard, or click the **Push File** button.
+
+---
+
 ### 🛠 Context Actions (Right-Click Menu)
 
 Right-click any **active** device to unlock a suite of powerful developer tools right from the Menu Bar:
@@ -66,13 +77,31 @@ Test your app's UI in both dark and light themes effortlessly.
 
 <img src="assets/mode%20toggles.png" width="600" alt="Appearance Toggle">
 
-#### 4. 🧹 Factory Reset & Cold Boot
+#### 4. 📺 Screen Mirroring
+
+Cast and interact with your device's screen directly from a floating, resizable window on your Mac.
+
+- **How to use:** Right-click an active device ➔ **Mirror Screen**.
+- **Features:** Low-latency video stream perfect for presentations, recordings, or interacting with the device alongside your code.
+
+#### 5. 🧹 Factory Reset & Cold Boot
 
 Start fresh without digging through deeply nested simulator settings or Xcode's device manager.
 
-- **How to use:** Right-click an _inactive_ device ➔ **Erase Data** (iOS) or **Cold Boot** (Android).
+- **How to use:** Right-click any device ➔ **Erase All Content & Settings** (iOS) or **Wipe Data** (Android) / **Cold Boot**.
+- **Behavior:** iOS Simulator shuts down, erases, then reboots automatically. Android Emulator restarts with a clean user data image.
+- **Cold Boot:** Restarts iOS Simulator or Android Emulator from a clean state, discarding any saved snapshot.
 
 <img src="assets/contextmenu-cold-boot.png" width="600" alt="Factory Reset">
+
+---
+
+### 📶 Wireless ADB & Device Pairing
+
+Cut the cord! V-Dock includes a built-in wireless pairing wizard for Android 11+ devices.
+
+- **How to use:** Click the **Pair Wireless Device** button at the bottom of the V-Dock Menu Bar.
+- **Features:** Instantly pair physical devices over your local Wi-Fi network using an auto-generated QR code or a manual pairing code. No terminal commands required!
 
 ---
 
