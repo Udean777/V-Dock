@@ -3,6 +3,10 @@ name: Release
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 concurrency:
   group: release-${{ github.ref }}
@@ -10,7 +14,7 @@ concurrency:
 
 jobs:
   release:
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,14 +39,18 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build app (unsigned)
+      - name: Install create-dmg
+        if: steps.tag_check.outputs.skip == 'false'
+        run: brew install create-dmg
+
+      - name: Build and Archive (Unsigned)
         if: steps.tag_check.outputs.skip == 'false'
         run: |
-          xcodebuild clean build \
+          xcodebuild clean archive \
             -project V-Dock.xcodeproj \
             -scheme V-Dock \
             -configuration Release \
-            -derivedDataPath build/derived \
+            -archivePath $PWD/build/V-Dock.xcarchive \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
@@ -50,12 +58,44 @@ jobs:
       - name: Create DMG
         if: steps.tag_check.outputs.skip == 'false'
         run: |
-          APP_PATH="build/derived/Build/Products/Release/V-Dock.app"
-          DMG_PATH="V-Dock-${{ steps.version.outputs.version }}.dmg"
-          hdiutil create -volname "V-Dock" \
-            -srcfolder "$APP_PATH" \
-            -ov -format UDZO \
-            "$DMG_PATH"
+          APP_PATH="build/V-Dock.xcarchive/Products/Applications/V-Dock.app"
+          DMG_NAME="V-Dock-${{ steps.version.outputs.version }}.dmg"
+          echo "DMG_NAME=$DMG_NAME" >> $GITHUB_ENV
+
+          create-dmg \
+            --volname "V-Dock Installer" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "V-Dock.app" 150 190 \
+            --hide-extension "V-Dock.app" \
+            --app-drop-link 450 190 \
+            "$DMG_NAME" \
+            "$APP_PATH"
+
+      - name: Generate Install Guide
+        if: steps.tag_check.outputs.skip == 'false'
+        run: |
+          cat << 'EOF' > INSTALL_GUIDE.txt
+          =========================================================
+          ⚠️ IMPORTANT INSTALLATION GUIDE FOR V-DOCK
+          =========================================================
+
+          Because this app is unsigned, macOS Gatekeeper may show:
+          "V-Dock is damaged and can't be opened."
+
+          The app is NOT damaged. This is Apple's security measure
+          for apps without a paid developer signature.
+
+          HOW TO FIX AND OPEN THE APP:
+          ---------------------------------------------------------
+          1. Open the downloaded DMG file.
+          2. Drag "V-Dock.app" into your "Applications" folder.
+          3. Open Terminal (Cmd+Space, type Terminal).
+          4. Run:  xattr -cr /Applications/V-Dock.app
+          5. (Apple Silicon Macs) Run:  codesign --force --deep -s - /Applications/V-Dock.app
+          6. Now open V-Dock from Applications.
+          EOF
 
       - name: Create GitHub Release
         if: steps.tag_check.outputs.skip == 'false'
@@ -63,5 +103,7 @@ jobs:
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: V-Dock v${{ steps.version.outputs.version }}
-          files: V-Dock-${{ steps.version.outputs.version }}.dmg
+          files: |
+            ${{ env.DMG_NAME }}
+            INSTALL_GUIDE.txt
           generate_release_notes: true
