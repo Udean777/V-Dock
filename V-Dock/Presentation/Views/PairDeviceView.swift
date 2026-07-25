@@ -151,8 +151,13 @@ struct PairDeviceView: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 48))
                 .foregroundStyle(.green)
-            Text("Berhasil terhubung ke \(addr)")
-                .font(.headline)
+            VStack(spacing: 4) {
+                Text("Berhasil terhubung")
+                    .font(.headline)
+                Text(addr)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Button("Selesai") { vm.reset() }
                 .buttonStyle(.borderedProminent)
         }
@@ -168,12 +173,9 @@ struct PairDeviceView: View {
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
-            HStack {
-                Button("Coba Lagi") { vm.reset() }
-                    .buttonStyle(.borderedProminent)
-                Button("Back") { vm.reset() }
-                    .buttonStyle(.bordered)
-            }
+
+            Button("Coba Lagi") { vm.reset() }
+                .buttonStyle(.borderedProminent)
         }
         .padding(32)
     }

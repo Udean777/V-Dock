@@ -2,7 +2,12 @@ import SwiftUI
 
 struct DashboardSidebarView: View {
     @Environment(AppState.self) var state
-    
+
+    private var bootedCount: Int { state.devices.filter { $0.status == .booted }.count }
+    private var shutdownCount: Int { state.devices.filter { $0.status == .shutdown }.count }
+    private var iosCount: Int { state.devices.filter { $0.platform == .ios }.count }
+    private var androidCount: Int { state.devices.filter { $0.platform == .android }.count }
+
     var body: some View {
         List {
             Section {
@@ -26,33 +31,27 @@ struct DashboardSidebarView: View {
                 .padding(.vertical, 4)
                 .listRowBackground(Color.clear)
             }
-            
+
             Section("Summary") {
                 StatRow(label: "Total", value: "\(state.devices.count)")
-                StatRow(label: "Running", value: "\(state.devices.filter { $0.status == .booted }.count)", color: .green)
-                StatRow(label: "iOS", value: "\(state.devices.filter { $0.platform == .ios }.count)", color: .blue)
-                StatRow(label: "Android", value: "\(state.devices.filter { $0.platform == .android }.count)", color: .green)
+                StatRow(label: "Running", value: "\(bootedCount)", color: .green)
+                StatRow(label: "iOS", value: "\(iosCount)", color: .blue)
+                StatRow(label: "Android", value: "\(androidCount)", color: .green)
             }
-            
+
             Section("Quick Actions") {
-                Button {
-                    Task { await bootAll() }
-                } label: {
-                    Label("Boot All", systemImage: "play.fill")
+                Button("Boot All", systemImage: "play.fill") {
+                    Task { await bulkAction(.boot) }
                 }
-                .disabled(state.devices.filter { $0.status == .shutdown }.isEmpty)
-                
-                Button {
-                    Task { await shutdownAll() }
-                } label: {
-                    Label("Shutdown All", systemImage: "stop.fill")
+                .disabled(shutdownCount == 0)
+
+                Button("Shutdown All", systemImage: "stop.fill") {
+                    Task { await bulkAction(.shutdown) }
                 }
-                .disabled(state.devices.filter { $0.status == .booted }.isEmpty)
-                
-                Button {
+                .disabled(bootedCount == 0)
+
+                Button("Refresh", systemImage: "arrow.clockwise") {
                     Task { await state.refresh() }
-                } label: {
-                    Label("Refresh", systemImage: "arrow.clockwise")
                 }
                 .keyboardShortcut("r", modifiers: .command)
             }
@@ -60,16 +59,11 @@ struct DashboardSidebarView: View {
         }
         .listStyle(.sidebar)
     }
-    
-    private func bootAll() async {
-        for device in state.devices where device.status == .shutdown {
-            await state.perform(.boot, on: device)
-        }
-    }
-    
-    private func shutdownAll() async {
-        for device in state.devices where device.status == .booted {
-            await state.perform(.shutdown, on: device)
+
+    private func bulkAction(_ action: DeviceAction) async {
+        let targetStatus: DeviceStatus = action == .boot ? .shutdown : .booted
+        for device in state.devices where device.status == targetStatus {
+            await state.perform(action, on: device)
         }
     }
 }
@@ -78,7 +72,7 @@ private struct StatRow: View {
     let label: String
     let value: String
     var color: Color = .primary
-    
+
     var body: some View {
         HStack {
             Text(label)

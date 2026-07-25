@@ -97,3 +97,6 @@ DerivedData/
 # Project specific
 test_appstate.swift
 test_view.swift
+
+# vscode
+.vscode/

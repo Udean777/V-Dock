@@ -2,7 +2,7 @@ import SwiftUI
 
 struct StatusBadgeView: View {
     let status: DeviceStatus
-    
+
     var body: some View {
         HStack(spacing: 4) {
             if status == .booted {
@@ -22,16 +22,16 @@ struct StatusBadgeView: View {
                 .foregroundStyle(color)
         }
     }
-    
-    var color: Color {
+
+    private var color: Color {
         switch status {
         case .booted: .green
         case .booting: .orange
         case .shutdown: .secondary
         }
     }
-    
-    var label: String {
+
+    private var label: String {
         switch status {
         case .booted: "Booted"
         case .booting: "Booting"

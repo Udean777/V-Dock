@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SettingsGeneralView: View {
     @Environment(AppState.self) var state
-    
+
     var body: some View {
         Form {
             Section {
@@ -20,30 +20,7 @@ struct SettingsGeneralView: View {
             } header: {
                 Label("Startup", systemImage: "power")
             }
-            
-            Section {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Image(systemName: "display")
-                            .font(.title2)
-                            .foregroundStyle(.tint)
-                        VStack(alignment: .leading) {
-                            Text("V-Dock")
-                                .font(.headline)
-                            Text("Version \(appVersion)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            } header: {
-                Label("About", systemImage: "info.circle")
-            }
         }
         .formStyle(.grouped)
-    }
-    
-    private var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     }
 }

@@ -90,42 +90,25 @@ struct DeviceCardView: View {
             }
         }
         .contextMenu {
-            if device.platform == .ios {
-                if device.status == .shutdown {
-                    Button("Boot", systemImage: "play") { Task { await state.perform(.boot, on: device) } }
-                } else {
-                    Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
-                    Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
-                    Divider()
-                    Menu("Appearance", systemImage: "paintbrush") {
-                        Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
-                        Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
-                    }
-                    Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
-                    Divider()
+            if device.status == .shutdown {
+                Button("Boot", systemImage: "play") { Task { await state.perform(.boot, on: device) } }
+                if device.platform == .android {
                     Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
                 }
-                Button("Erase All Content & Settings", systemImage: "trash", role: .destructive) { showWipeConfirm = true }
-            }
-            
-            if device.platform == .android {
-                if device.status == .shutdown {
-                    Button("Boot", systemImage: "play") { Task { await state.perform(.boot, on: device) } }
-                    Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
-                } else {
-                    Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
-                    Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
-                    Divider()
-                    Menu("Appearance", systemImage: "paintbrush") {
-                        Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
-                        Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
-                    }
-                    Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
-                    Divider()
-                    Button("Cold Boot (Restart)", systemImage: "bolt.fill") { showColdBootConfirm = true }
+            } else {
+                Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
+                Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
+                Divider()
+                Menu("Appearance", systemImage: "paintbrush") {
+                    Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
+                    Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
                 }
-                Button("Wipe Data", systemImage: "trash", role: .destructive) { showWipeConfirm = true }
+                Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
+                Divider()
+                Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
             }
+            Button(device.platform == .ios ? "Erase All Content & Settings" : "Wipe Data",
+                   systemImage: "trash", role: .destructive) { showWipeConfirm = true }
         }
         .alert("Erase \(device.name)?", isPresented: $showWipeConfirm) {
             Button(device.platform == .ios ? "Erase All Content" : "Wipe Data", role: .destructive) {
