@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MenuBarView: View {
     @Environment(AppState.self) var state
-
+    
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -31,7 +31,7 @@ struct MenuBarView: View {
             .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
             
             Divider()
-
+            
             ScrollView {
                 VStack(spacing: 16) {
                     let running = state.devices.filter { $0.status == .booted }
@@ -119,6 +119,13 @@ struct MenuBarView: View {
                 }
                 .buttonStyle(.plain)
                 
+                Button("Pair Wireless Device", systemImage: "wifi") {
+                    openPairingWindow()
+                }
+                .buttonStyle(.link)
+                
+                Divider()
+                
                 HStack {
                     Button("Settings") {
                         openSettingsWindow()
@@ -156,16 +163,28 @@ struct MenuBarView: View {
                 openLogcatWindow(for: device)
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OpenNetworkSniffer"))) { notification in
+            if let device = notification.object as? Device {
+                openNetworkSnifferWindow(for: device)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OpenScreenMirror"))) { notification in
+            if let device = notification.object as? Device {
+                openMirrorWindow(for: device)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OpenPairing"))) { _ in
+            openPairingWindow()
+        }
     }
     
     private func openDashboardWindow() {
         NSApp.setActivationPolicy(.regular)
         
         if let window = NSApp.windows.first(where: { $0.title == "Dashboard" || $0.title == "Devices" }) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                window.makeKeyAndOrderFront(nil)
-                NSApp.activate(ignoringOtherApps: true)
-            }
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+            NSApp.activate(ignoringOtherApps: true)
             return
         }
         
@@ -179,21 +198,18 @@ struct MenuBarView: View {
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: DashboardView().environment(state))
         setupWindowObserver(for: window)
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-        }
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+        NSApp.activate(ignoringOtherApps: true)
     }
     
     private func openSettingsWindow() {
         NSApp.setActivationPolicy(.regular)
         
         if let window = NSApp.windows.first(where: { $0.title == "Settings" }) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                window.makeKeyAndOrderFront(nil)
-                NSApp.activate(ignoringOtherApps: true)
-            }
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+            NSApp.activate(ignoringOtherApps: true)
             return
         }
         
@@ -207,11 +223,9 @@ struct MenuBarView: View {
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: SettingsView().environment(state))
         setupWindowObserver(for: window)
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-        }
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+        NSApp.activate(ignoringOtherApps: true)
     }
     
     private func openLogcatWindow(for device: Device) {
@@ -219,10 +233,9 @@ struct MenuBarView: View {
         
         let windowTitle = "Logcat: \(device.name)"
         if let window = NSApp.windows.first(where: { $0.title == windowTitle }) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                window.makeKeyAndOrderFront(nil)
-                NSApp.activate(ignoringOtherApps: true)
-            }
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+            NSApp.activate(ignoringOtherApps: true)
             return
         }
         
@@ -239,19 +252,108 @@ struct MenuBarView: View {
         
         setupWindowObserver(for: window)
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-        }
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+        NSApp.activate(ignoringOtherApps: true)
     }
     
+    private func openNetworkSnifferWindow(for device: Device) {
+        NSApp.setActivationPolicy(.regular)
+        
+        let windowTitle = "Network Sniffer: \(device.name)"
+        if let window = NSApp.windows.first(where: { $0.title == windowTitle }) {
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 1000, height: 700),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered, defer: false)
+        window.center()
+        window.title = windowTitle
+        window.isRestorable = false
+        window.isReleasedWhenClosed = false
+        
+        window.contentView = NSHostingView(rootView: NetworkSnifferView(device: device).environment(state))
+        
+        setupWindowObserver(for: window)
+        
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+        NSApp.activate(ignoringOtherApps: true)
+    }
+    
+    private func openMirrorWindow(for device: Device) {
+        NSApp.setActivationPolicy(.regular)
+        
+        let windowTitle = "Mirror: \(device.name)"
+        if let window = NSApp.windows.first(where: { $0.title == windowTitle }) {
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 1000),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered, defer: false)
+        window.center()
+        window.title = windowTitle
+        window.isRestorable = false
+        window.isReleasedWhenClosed = false
+        window.contentView = NSHostingView(rootView: ScreenMirrorView(device: device).environment(state)
+        )
+        
+        setupWindowObserver(for: window)
+        
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+        NSApp.activate(ignoringOtherApps: true)
+    }
+    
+    private func openPairingWindow() {
+        NSApp.setActivationPolicy(.regular)
+
+        if let window = NSApp.windows.first(where: { $0.title == "Pair Wireless Device" }) {
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 500),
+            styleMask: [.titled, .closable, .resizable],
+            backing: .buffered, defer: false)
+        window.center()
+        window.title = "Pair Wireless Device"
+        window.isRestorable = false
+        window.isReleasedWhenClosed = true
+        window.contentView = NSHostingView(
+            rootView: PairDeviceView(pairingUseCase: state.pairingUseCase)
+        )
+
+        setupWindowObserver(for: window)
+
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+        NSApp.activate(ignoringOtherApps: true)
+        window.setContentSize(NSSize(width: 420, height: 500))
+    }
+
     private func setupWindowObserver(for window: NSWindow) {
         NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { _ in
-            let remainingWindows = NSApp.windows.filter { 
-                $0 != window && $0.isVisible && ($0.title == "Dashboard" || $0.title == "Devices" || $0.title == "Settings" || $0.title.hasPrefix("Logcat: ")) 
+            let remainingWindows = NSApp.windows.filter {
+                $0 != window && $0.isVisible && ($0.title == "Dashboard" || $0.title == "Devices" || $0.title == "Settings" || $0.title.hasPrefix("Logcat: ") || $0.title.hasPrefix("Network Sniffer: ") || $0.title.hasPrefix("Mirror: ") || $0.title == "Pair Wireless Device")
             }
             if remainingWindows.isEmpty {
-                NSApp.setActivationPolicy(.accessory)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    NSApp.setActivationPolicy(.accessory)
+                }
             }
         }
     }
@@ -333,11 +435,13 @@ struct MenuBarDeviceRow: View {
                     Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
                     Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
                     Divider()
+                    Button("Mirror Screen", systemImage: "display") { state.openMirror(for: device) }
                     Menu("Appearance", systemImage: "paintbrush") {
                         Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
                         Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
                     }
                     Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
+                    Button("Network Sniffer", systemImage: "network") { state.openNetworkSniffer(for: device) }
                     Divider()
                     Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
                 }
@@ -357,6 +461,9 @@ struct MenuBarDeviceRow: View {
                         Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
                     }
                     Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
+                    Button("Network Sniffer", systemImage: "network") { state.openNetworkSniffer(for: device) }
+                    Divider()
+                    Button("Mirror Screen", systemImage: "display") { state.openMirror(for: device) }
                     Divider()
                     Button("Cold Boot (Restart)", systemImage: "bolt.fill") { showColdBootConfirm = true }
                 }
@@ -366,8 +473,8 @@ struct MenuBarDeviceRow: View {
         .destructiveActionAlert(
             title: "Erase \(device.name)?",
             message: device.platform == .ios
-                ? "This will permanently erase all content and settings on this simulator, including installed apps and their data."
-                : "This will wipe all user data on this emulator. The AVD configuration will remain intact.",
+            ? "This will permanently erase all content and settings on this simulator, including installed apps and their data."
+            : "This will wipe all user data on this emulator. The AVD configuration will remain intact.",
             confirmLabel: device.platform == .ios ? "Erase All Content" : "Wipe Data",
             isPresented: $showWipeConfirm
         ) {

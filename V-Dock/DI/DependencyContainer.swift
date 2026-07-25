@@ -8,7 +8,8 @@ final class DependencyContainer {
         let shell = ShellExecutor()
         let simulatorRepo = SimulatorRepository(shell: shell)
         let androidRepo = AndroidEmulatorRepository(shell: shell)
-        let discoverUseCase = DiscoverDevicesUseCase(repos: [simulatorRepo, androidRepo])
+        let wirelessRepo = WirelessADBRepository(shell: shell)
+        let discoverUseCase = DiscoverDevicesUseCase(repos: [simulatorRepo, androidRepo, wirelessRepo])
         let lifecycleUseCase = DeviceLifecycleUseCase(
             iosLifecycle: simulatorRepo,
             androidLifecycle: androidRepo
@@ -26,14 +27,29 @@ final class DependencyContainer {
             iosStream: simulatorRepo,
             androidStream: androidRepo
         )
+        let networkProxyUseCase = NetworkProxyUseCase(
+            androidRepo: androidRepo,
+            iosRepo: simulatorRepo
+        )
+        let networkSnifferUseCase = NetworkSnifferUseCase(
+            proxyServer: LocalProxyServer()
+        )
+        let androidScreenMirror = AndroidScreenMirror(shell: shell)
+        let screenMirrorUseCase = ScreenMirrorUseCase(androidMirror: androidScreenMirror)
         
+        let pairingUseCase = WirelessPairingUseCase(wirelessRepo: wirelessRepo)
+
         appState = AppState(
             discoverUseCase: discoverUseCase,
             lifecycleUseCase: lifecycleUseCase,
             resourceUseCase: resourceUseCase,
             mediaCaptureUseCase: mediaCaptureUseCase,
             quickTogglesUseCase: quickTogglesUseCase,
-            logStreamUseCase: logStreamUseCase
+            logStreamUseCase: logStreamUseCase,
+            networkProxyUseCase: networkProxyUseCase,
+            networkSnifferUseCase: networkSnifferUseCase,
+            mirrorUseCase: screenMirrorUseCase,
+            pairingUseCase: pairingUseCase
         )
     }
 }

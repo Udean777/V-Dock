@@ -33,6 +33,11 @@ final class AppState {
     private let mediaCaptureUseCase: MediaCaptureUseCase
     private let quickTogglesUseCase: QuickTogglesUseCase
     let logStreamUseCase: LogStreamUseCase
+    let networkProxyUseCase: NetworkProxyUseCase
+    let networkSnifferUseCase: NetworkSnifferUseCase
+    let mirrorUseCase: ScreenMirrorUseCase
+    let pairingUseCase: WirelessPairingUseCase
+    var mirroringDeviceID: String?
     
     init(
         discoverUseCase: DiscoverDevicesUseCase,
@@ -40,7 +45,11 @@ final class AppState {
         resourceUseCase: ResourceMonitorUseCase,
         mediaCaptureUseCase: MediaCaptureUseCase,
         quickTogglesUseCase: QuickTogglesUseCase,
-        logStreamUseCase: LogStreamUseCase
+        logStreamUseCase: LogStreamUseCase,
+        networkProxyUseCase: NetworkProxyUseCase,
+        networkSnifferUseCase: NetworkSnifferUseCase,
+        mirrorUseCase: ScreenMirrorUseCase,
+        pairingUseCase: WirelessPairingUseCase
     ) {
         self.discoverUseCase = discoverUseCase
         self.lifecycleUseCase = lifecycleUseCase
@@ -48,9 +57,13 @@ final class AppState {
         self.mediaCaptureUseCase = mediaCaptureUseCase
         self.quickTogglesUseCase = quickTogglesUseCase
         self.logStreamUseCase = logStreamUseCase
+        self.networkProxyUseCase = networkProxyUseCase
+        self.networkSnifferUseCase = networkSnifferUseCase
         pinnedIDs = Set(UserDefaults.standard.stringArray(forKey: "pinnedIDs") ?? [])
         androidSDKPath = UserDefaults.standard.string(forKey: "androidSDKPath") ?? ""
         isLaunchAtLoginEnabled = SMAppService.mainApp.status == .enabled
+        self.mirrorUseCase = mirrorUseCase
+        self.pairingUseCase = pairingUseCase
     }
     
     var hasAndroidSDK: Bool {
@@ -177,5 +190,43 @@ final class AppState {
     
     func openLogcat(for device: Device) {
         NotificationCenter.default.post(name: NSNotification.Name("OpenLogcat"), object: device)
+    }
+    
+    func openMirror(for device: Device) {
+        NotificationCenter.default.post(name: NSNotification.Name("OpenScreenMirror"), object: device)
+    }
+    
+    func startMirrorStream(for device: Device) -> AsyncStream<CGImage> {
+        mirroringDeviceID = device.id
+        return mirrorUseCase.startMirror(device: device)
+    }
+    
+    func stopMirror(for device: Device) {
+        mirrorUseCase.stopMirror(device: device)
+        mirroringDeviceID = nil
+    }
+    
+    func sendTouch(device: Device, x: Int, y: Int, action: TouchAction) {
+        mirrorUseCase.sendTouch(device: device, x: x, y: y, action: action)
+    }
+    
+    func sendSwipe(device: Device, x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Int) {
+        mirrorUseCase.sendSwipe(device: device, x1: x1, y1: y1, x2: x2, y2: y2, durationMs: durationMs)
+    }
+    
+    func sendKey(device: Device, key: String) {
+        mirrorUseCase.sendKey(device: device, key: key)
+    }
+    
+    func openNetworkSniffer(for device: Device) {
+        NotificationCenter.default.post(name: NSNotification.Name("OpenNetworkSniffer"), object: device)
+    }
+
+    func openPairing() {
+        NotificationCenter.default.post(name: NSNotification.Name("OpenPairing"), object: nil)
+    }
+
+    func refreshPairingServices() async -> [DiscoveredService] {
+        (try? await pairingUseCase.discoverServices()) ?? []
     }
 }

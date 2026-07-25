@@ -91,6 +91,8 @@ struct DeviceCardView: View {
                     }
                     Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
                     Divider()
+                    Button("Mirror Screen", systemImage: "display") { state.openMirror(for: device) }
+                    Divider()
                     Button("Cold Boot (Restart)", systemImage: "bolt.fill") { showColdBootConfirm = true }
                 }
                 Button("Wipe Data", systemImage: "trash", role: .destructive) { showWipeConfirm = true }
@@ -99,8 +101,8 @@ struct DeviceCardView: View {
         .destructiveActionAlert(
             title: "Erase \(device.name)?",
             message: device.platform == .ios
-                ? "This will permanently erase all content and settings on this simulator, including installed apps and their data."
-                : "This will wipe all user data on this emulator. The AVD configuration will remain intact.",
+            ? "This will permanently erase all content and settings on this simulator, including installed apps and their data."
+            : "This will wipe all user data on this emulator. The AVD configuration will remain intact.",
             confirmLabel: device.platform == .ios ? "Erase All Content" : "Wipe Data",
             isPresented: $showWipeConfirm
         ) {

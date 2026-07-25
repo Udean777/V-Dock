@@ -6,4 +6,5 @@ enum DeviceAction: Sendable {
     case coldBoot
     case wipeData
     case forceKill
+    case mirror
 }

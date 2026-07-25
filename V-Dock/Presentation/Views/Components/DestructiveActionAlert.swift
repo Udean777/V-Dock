@@ -9,14 +9,34 @@ struct DestructiveActionAlert: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .alert(title, isPresented: $isPresented) {
-                Button(confirmLabel, role: .destructive) {
-                    Task { await onConfirm() }
+            .onChange(of: isPresented) { _, newValue in
+                if newValue {
+                    showAlert()
                 }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text(message)
             }
+    }
+    
+    private func showAlert() {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.alertStyle = .warning
+        
+        alert.addButton(withTitle: confirmLabel)
+        alert.addButton(withTitle: "Cancel")
+        
+        // Activate app so alert comes to front without closing the menu bar if possible
+        NSApp.activate(ignoringOtherApps: true)
+        
+        let response = alert.runModal()
+        
+        // Must dispatch the state update and action to avoid UI thread conflicts
+        DispatchQueue.main.async {
+            self.isPresented = false
+            if response == .alertFirstButtonReturn {
+                Task { await onConfirm() }
+            }
+        }
     }
 }
 
