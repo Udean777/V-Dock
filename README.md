@@ -14,15 +14,9 @@
 
 V-Dock is a lightning-fast, native macOS Menu Bar utility designed to streamline the workflow of iOS and Android developers. Manage, boot, and terminate your iOS Simulators and Android Emulators instantly without ever opening Xcode or Android Studio.
 
-<div align="center">
-  <!-- TODO: Drop your beautiful app screenshots here! -->
-  <!-- <img src="screenshots/dashboard.png" width="45%" alt="V-Dock Dashboard"> -->
-  <!-- <img src="screenshots/menubar.png" width="45%" alt="V-Dock Menu Bar"> -->
-</div>
-
 ---
 
-## ✨ Highlight Features & How to Use
+## ✨ Highlight Features
 
 ### 🚀 Menu Bar Mastery
 
@@ -30,86 +24,110 @@ V-Dock lives quietly in your macOS Menu Bar. Click the V-Dock icon to reveal all
 
 - **One-Click Boot & Shutdown:** Click the power icon next to any device to boot or terminate it instantly.
 - **Pin Favorite Devices:** Right-click a device and select "Pin" so your daily drivers always stay at the very top.
+- **Overflow Menu (⋯):** Access file push, screenshot, and screen recording from a single compact menu on each device row.
 
-<img src="assets/menubar.png" width="600" alt="Menu Bar Mastery">
+<img src="assets/menubar.png" width="600" alt="Menu Bar">
+
+---
+
+### 📤 Cross-Platform File Transfer & App Installer (Drag & Drop)
+
+Push media, documents, and even install apps seamlessly to both iOS Simulators and Android Emulators using an intuitive Drag & Drop interface or the built-in file picker.
+
+- **Bulk Upload & Install:** Select or drag multiple files and apps at once. V-Dock processes them concurrently.
+- **Auto App Installation:** Drop an `.apk` (Android) or `.app` (iOS Simulator build) and V-Dock will attempt to install it on the device. > ⚠️ **Note:** This feature is experimental and may not work reliably in all cases.
+- **Smart Routing:** Media (.png, .jpg, .mp4) routes to Photos/Gallery. Documents (.pdf, .txt) go to the Files app. Unsupported formats divert intelligently.
+- **How to use:** Drag & Drop files onto any running device card, or click the overflow menu (⋯) ➔ **Push File**.
 
 ---
 
 ### 🛠 Context Actions (Right-Click Menu)
 
-Right-click any **active** device to unlock a suite of powerful developer tools right from the Menu Bar:
+Right-click any device to unlock a suite of powerful developer tools:
 
-#### 1. 🛠 Mini Logcat / Console Viewer
+#### 1. 📋 Mini Logcat / Console Viewer
 
-Stream device logs directly into a beautiful, native macOS window without opening Android Studio or Xcode.
+Stream device logs into a native macOS window without opening Android Studio or Xcode.
 
 - **How to use:** Right-click an active device ➔ **Show Logcat**.
 - **Features:** Real-time streaming, syntax highlighting (Errors/Warnings), auto-scrolling, and live search filtering.
 
-<img src="assets/logcat.png" width="600" alt="Mini Logcat Viewer">
+<img src="assets/logcat.png" width="600" alt="Logcat Viewer">
 
 #### 2. 📸 Quick Media Capture
 
-Need to share a bug or UI preview with your team? Capture it instantly.
+Capture screenshots or record the screen—saved instantly to your Desktop.
 
-- **How to use:** Right-click an active device ➔ **Take Screenshot** or **Record Screen**.
-- **Result:** The media file is automatically captured and saved directly to your Mac's Desktop.
+- **How to use:** Click the overflow menu (⋯) on any active device ➔ **Take Screenshot** or **Start Recording**.
+- **Result:** Automatically saved to your Mac's Desktop with a notification.
 
 <img src="assets/screenshot.png" width="600" alt="Media Capture">
 
 #### 3. 🌙 Appearance Toggles
 
-Test your app's UI in both dark and light themes effortlessly.
+Test your app's UI in dark and light themes effortlessly.
 
 - **How to use:** Right-click an active device ➔ **Appearance** ➔ **Dark Mode** or **Light Mode**.
-- **Result:** The emulator/simulator instantly forces the OS-level theme change.
+- **Result:** Instantly forces the OS-level theme change.
 
 <img src="assets/mode%20toggles.png" width="600" alt="Appearance Toggle">
 
 #### 4. 🧹 Factory Reset & Cold Boot
 
-Start fresh without digging through deeply nested simulator settings or Xcode's device manager.
+Start fresh without digging through deeply nested settings.
 
-- **How to use:** Right-click an _inactive_ device ➔ **Erase Data** (iOS) or **Cold Boot** (Android).
+- **How to use:** Right-click any device ➔ **Erase All Content & Settings** (iOS) or **Wipe Data** (Android) / **Cold Boot**.
+- **Behavior:** iOS Simulator shuts down, erases, then reboots automatically. Android Emulator restarts with a clean user data image.
 
 <img src="assets/contextmenu-cold-boot.png" width="600" alt="Factory Reset">
 
 ---
 
+### 📶 Wireless ADB & Device Pairing
+
+Pair physical Android 11+ devices over Wi-Fi—no terminal required.
+
+- **How to use:** Click the **Pair Wireless** button at the bottom of the V-Dock Menu Bar.
+- **Features:** Pair via QR code or manual pairing code. Auto-discovers services on the local network via mDNS.
+
+---
+
+### 🔔 Desktop Notifications
+
+V-Dock sends macOS native notifications for key events:
+- Device boot complete
+- Screenshot/recording saved
+- File transfer or app install complete
+- Wireless pairing success or failure
+
+Notifications appear as banners and respect macOS Focus modes.
+
+---
+
 ### 🥷 Under The Hood
 
-- **Stealth Hybrid Mode:** V-Dock runs completely hidden in the background as a Menu Bar accessory (`.accessory`). However, when you open the full Dashboard, it dynamically promotes itself to a regular macOS app (`.regular`) complete with a Dock icon and global keyboard shortcuts.
-- **Native Shortcuts:** Deep macOS integration with raw `NSEvent` interceptors guarantees that shortcuts like `Cmd + Q`, `Cmd + W`, and `Cmd + ,` work flawlessly.
-- **Background Execution:** Utilizes Swift Concurrency (`Task.detached`) for non-blocking shell executions (e.g., `simctl` commands), keeping the UI buttery smooth.
+- **Stealth Hybrid Mode:** Runs as a Menu Bar accessory (`.accessory`). When opening the Dashboard, promotes to a regular app (`.regular`) with Dock icon and keyboard shortcuts.
+- **Dynamic Activation Policy:** Automatically reverts to `.accessory` when all windows are closed.
+- **Native Shortcuts:** `Cmd + Q`, `Cmd + W`, `Cmd + ,`, `Cmd + R` work reliably via low-level `NSEvent` monitors.
+- **Swift Concurrency:** Uses `async/await` and `AsyncStream` for non-blocking shell execution.
 
 ---
 
 ## 🏗 Architecture
 
-V-Dock is built using **Clean Architecture** principles to separate concerns, making the codebase highly testable and maintainable:
+Built using **Clean Architecture** principles:
 
 ### 1. Presentation Layer
-
-Contains all SwiftUI Views. We heavily utilize custom `NSWindow` and `NSHostingView` instances instead of standard SwiftUI `WindowGroup` to completely bypass macOS state restoration bugs and maintain absolute control over the app's lifecycle.
-_Key files: `MenuBarView.swift`, `DashboardView.swift`, `SettingsView.swift`_
+SwiftUI Views with custom `NSWindow`/`NSHostingView` for full lifecycle control.
+_Key: `MenuBarView.swift`, `DashboardView.swift`, `SettingsView.swift`_
 
 ### 2. Domain Layer
-
-The core business logic and state management. The `AppState` class acts as the single source of truth (`@Observable`), managing device lists, statuses, and pinned configurations.
-_Key files: `AppState.swift`, `Device.swift`_
+Business logic and state management. `AppState` (`@Observable`) is the single source of truth.
+_Key: `AppState.swift`, `Device.swift`_
 
 ### 3. Data Layer
-
-Handles interactions with the outside world, specifically executing shell commands (`simctl`, `emulator`) to control the mobile environments asynchronously.
-_Key files: `ShellExecutor.swift`_
-
----
-
-## 🛠 Advanced Technical Implementation
-
-- **Defeating Zombie Windows:** V-Dock implements the "Holy Trinity" of state restoration blocking (`ApplePersistenceIgnoreState`, `NSQuitAlwaysKeepsWindows`, and low-level AppDelegate overrides) to ensure windows never reopen unexpectedly on launch.
-- **Dynamic Activation Policy:** V-Dock effortlessly switches between `NSApp.setActivationPolicy(.accessory)` and `.regular`. It hides from your Dock when you just want a menu bar widget, but acts like a full app when the Dashboard is open.
-- **NSEvent Monitors:** Bypasses SwiftUI's fragile menu system by hooking directly into macOS's lowest-level keyboard event monitors to guarantee shortcut reliability.
+Shell command execution (`simctl`, `emulator`, `adb`) via `ShellExecutor`.
+_Key: `ShellExecutor.swift`_
 
 ---
 
@@ -119,7 +137,7 @@ _Key files: `ShellExecutor.swift`_
 
 - macOS 14.0+
 - Xcode 15.0+
-- Android Studio / Android SDK (Optional, for Android Emulator support)
+- Android SDK (optional, for Android Emulator support)
 
 ### Installation
 
@@ -132,23 +150,22 @@ _Key files: `ShellExecutor.swift`_
 
 ### Configuration
 
-If you use Android Emulators, open V-Dock Settings (`Cmd + ,`) and specify your Android SDK path (typically `/Users/YOUR_USERNAME/Library/Android/sdk`).
+For Android Emulator support, open V-Dock Settings (`Cmd + ,`) and set your Android SDK path (typically `/Users/YOUR_USERNAME/Library/Android/sdk`).
 
 ---
 
 ## 🤝 Contributing
 
 Contributions, issues, and feature requests are welcome!
-Feel free to check [issues page](https://github.com/yourusername/V-Dock/issues).
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
+3. Commit your Changes
+4. Push to the Branch
 5. Open a Pull Request
 
 ---
 
 <div align="center">
-  <p>Built with ❤️ for Community</p>
+  <p>Built with ❤️ for the Community</p>
 </div>

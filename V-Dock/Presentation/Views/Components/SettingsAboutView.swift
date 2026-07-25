@@ -13,31 +13,25 @@ struct SettingsAboutView: View {
                     .font(.system(size: 48))
                     .foregroundStyle(.tint)
             }
-            
+
             Text("V-Dock")
                 .font(.title)
                 .fontWeight(.medium)
-            
+
             Text("Version \(appVersion) (Build \(buildNumber))")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            
+
             Divider()
                 .frame(width: 200)
-            
-            VStack(spacing: 4) {
-                Text("A macOS menu bar utility")
-                    .font(.caption)
-                Text("for managing iOS Simulators")
-                    .font(.caption)
-                Text("and Android Emulators.")
-                    .font(.caption)
-            }
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-            
+
+            Text("A macOS menu bar utility\nfor managing iOS Simulators\nand Android Emulators.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
             Spacer()
-            
+
             Text("macOS \(macOSVersion)")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
@@ -45,18 +39,17 @@ struct SettingsAboutView: View {
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
+
     private var appVersion: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     }
-    
+
     private var buildNumber: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
     }
-    
+
     private var macOSVersion: String {
-        let process = ProcessInfo.processInfo
-        let version = process.operatingSystemVersion
-        return "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
+        let v = ProcessInfo.processInfo.operatingSystemVersion
+        return "\(v.majorVersion).\(v.minorVersion).\(v.patchVersion)"
     }
 }

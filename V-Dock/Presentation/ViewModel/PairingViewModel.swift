@@ -123,8 +123,10 @@ final class PairingViewModel {
             )
             step = .done("\(host):\(port)")
             mdnspollTask?.cancel()
+            NotificationManager.shared.sendNotification(title: "Wireless ADB Connected", body: "Successfully paired with \(host):\(port)")
         } catch {
             step = .error(error.localizedDescription)
+            NotificationManager.shared.sendNotification(title: "Pairing Failed", body: error.localizedDescription)
         }
     }
 

@@ -11,6 +11,8 @@ struct DeviceCardView: View {
     
     @State private var showWipeConfirm = false
     @State private var showColdBootConfirm = false
+    @State private var pushFileVM: PushFileViewModel?
+    @State private var isTargetedForDrop = false
     
     var body: some View {
         HStack(spacing: 12) {
@@ -23,6 +25,13 @@ struct DeviceCardView: View {
                 HStack {
                     Text(device.name)
                         .font(.body)
+                    
+                    if let vm = pushFileVM, vm.isTransferring {
+                        ProgressView()
+                            .controlSize(.small)
+                            .padding(.leading, 4)
+                    }
+                    
                     Spacer()
                     StatusBadgeView(status: device.status)
                 }
@@ -33,6 +42,15 @@ struct DeviceCardView: View {
             }
             
             if device.status == .booted {
+                Button {
+                    pushFileVM?.pickFileAndPush(to: device)
+                } label: {
+                    Image(systemName: "square.and.arrow.down")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Push File to Device")
+                
                 Button {
                     Task { await state.takeScreenshot(for: device) }
                 } label: {
@@ -58,63 +76,62 @@ struct DeviceCardView: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 4)
+        .background(isTargetedForDrop ? Color.accentColor.opacity(0.1) : Color.clear)
+        .cornerRadius(8)
+        .dropDestination(for: URL.self) { urls, _ in
+            guard !urls.isEmpty, device.status == .booted else { return false }
+            Task { @MainActor in
+                await pushFileVM?.push(files: urls, to: device)
+            }
+            return true
+        } isTargeted: { targeted in
+            if device.status == .booted {
+                isTargetedForDrop = targeted
+            }
+        }
         .contextMenu {
-            if device.platform == .ios {
-                if device.status == .shutdown {
-                    Button("Boot", systemImage: "play") { Task { await state.perform(.boot, on: device) } }
-                } else {
-                    Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
-                    Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
-                    Divider()
-                    Menu("Appearance", systemImage: "paintbrush") {
-                        Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
-                        Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
-                    }
-                    Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
-                    Divider()
+            if device.status == .shutdown {
+                Button("Boot", systemImage: "play") { Task { await state.perform(.boot, on: device) } }
+                if device.platform == .android {
                     Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
                 }
-                Button("Erase All Content & Settings", systemImage: "trash", role: .destructive) { showWipeConfirm = true }
-            }
-            
-            if device.platform == .android {
-                if device.status == .shutdown {
-                    Button("Boot", systemImage: "play") { Task { await state.perform(.boot, on: device) } }
-                    Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
-                } else {
-                    Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
-                    Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
-                    Divider()
-                    Menu("Appearance", systemImage: "paintbrush") {
-                        Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
-                        Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
-                    }
-                    Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
-                    Divider()
-                    Button("Mirror Screen", systemImage: "display") { state.openMirror(for: device) }
-                    Divider()
-                    Button("Cold Boot (Restart)", systemImage: "bolt.fill") { showColdBootConfirm = true }
+            } else {
+                Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
+                Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
+                Divider()
+                Menu("Appearance", systemImage: "paintbrush") {
+                    Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
+                    Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
                 }
-                Button("Wipe Data", systemImage: "trash", role: .destructive) { showWipeConfirm = true }
+                Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
+                Divider()
+                Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
             }
+            Button(device.platform == .ios ? "Erase All Content & Settings" : "Wipe Data",
+                   systemImage: "trash", role: .destructive) { showWipeConfirm = true }
         }
-        .destructiveActionAlert(
-            title: "Erase \(device.name)?",
-            message: device.platform == .ios
-            ? "This will permanently erase all content and settings on this simulator, including installed apps and their data."
-            : "This will wipe all user data on this emulator. The AVD configuration will remain intact.",
-            confirmLabel: device.platform == .ios ? "Erase All Content" : "Wipe Data",
-            isPresented: $showWipeConfirm
-        ) {
-            await onPerformAction(.wipeData)
+        .alert("Erase \(device.name)?", isPresented: $showWipeConfirm) {
+            Button(device.platform == .ios ? "Erase All Content" : "Wipe Data", role: .destructive) {
+                Task { await onPerformAction(.wipeData) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(device.platform == .ios
+                ? "This will permanently erase all content and settings on this simulator, including installed apps and their data."
+                : "This will wipe all user data on this emulator. The AVD configuration will remain intact.")
         }
-        .destructiveActionAlert(
-            title: "Cold Boot \(device.name)?",
-            message: "The device will be shut down and restarted from a clean state, discarding any saved snapshot.",
-            confirmLabel: "Cold Boot",
-            isPresented: $showColdBootConfirm
-        ) {
-            await onPerformAction(.coldBoot)
+        .alert("Cold Boot \(device.name)?", isPresented: $showColdBootConfirm) {
+            Button("Cold Boot", role: .destructive) {
+                Task { await onPerformAction(.coldBoot) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The device will be shut down and restarted from a clean state, discarding any saved snapshot.")
+        }
+        .onAppear {
+            if pushFileVM == nil {
+                pushFileVM = PushFileViewModel(useCase: state.pushFileUseCase)
+            }
         }
     }
     

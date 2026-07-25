@@ -2,18 +2,26 @@ import SwiftUI
 
 struct SettingsSDKView: View {
     @Environment(AppState.self) var state
-    
+
+    private var sdkPathBinding: Binding<String> {
+        Binding(
+            get: { state.androidSDKPath },
+            set: { state.androidSDKPath = $0 }
+        )
+    }
+
+    private var emulatorPath: String { "\(state.androidSDKPath)/emulator/emulator" }
+    private var adbPath: String { "\(state.androidSDKPath)/platform-tools/adb" }
+    private var emulatorExists: Bool { FileManager.default.fileExists(atPath: emulatorPath) }
+    private var adbExists: Bool { FileManager.default.fileExists(atPath: adbPath) }
+
     var body: some View {
         Form {
             Section {
                 HStack(spacing: 8) {
-                    TextField("", text: Binding(
-                        get: { state.androidSDKPath },
-                        set: { state.androidSDKPath = $0 }
-                    ))
-                    .textFieldStyle(.roundedBorder)
-                    .font(.body)
-                    
+                    TextField("", text: sdkPathBinding)
+                        .textFieldStyle(.roundedBorder)
+
                     Button("Browse") {
                         let panel = NSOpenPanel()
                         panel.canChooseFiles = false
@@ -26,8 +34,12 @@ struct SettingsSDKView: View {
                         }
                     }
                 }
-                
-                if !state.androidSDKPath.isEmpty {
+
+                if state.androidSDKPath.isEmpty {
+                    Text("Example: ~/Library/Android/sdk")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                } else {
                     HStack(spacing: 6) {
                         Image(systemName: state.hasAndroidSDK ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                             .foregroundStyle(state.hasAndroidSDK ? .green : .yellow)
@@ -35,22 +47,13 @@ struct SettingsSDKView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                } else {
-                    Text("Example: ~/Library/Android/sdk")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
                 }
             } header: {
                 Label("Android SDK Location", systemImage: "folder")
             }
-            
+
             if state.hasAndroidSDK {
                 Section {
-                    let emulatorPath = "\(state.androidSDKPath)/emulator/emulator"
-                    let adbPath = "\(state.androidSDKPath)/platform-tools/adb"
-                    let emulatorExists = FileManager.default.fileExists(atPath: emulatorPath)
-                    let adbExists = FileManager.default.fileExists(atPath: adbPath)
-                    
                     ToolStatusRow(name: "Emulator", path: emulatorPath, exists: emulatorExists)
                     ToolStatusRow(name: "ADB", path: adbPath, exists: adbExists)
                 } header: {
@@ -66,7 +69,7 @@ private struct ToolStatusRow: View {
     let name: String
     let path: String
     let exists: Bool
-    
+
     var body: some View {
         HStack {
             Text(name)

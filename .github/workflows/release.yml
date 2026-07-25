@@ -1,42 +1,67 @@
-name: Build and Release macOS App
+name: Release
 
 on:
   push:
-    tags:
-      - 'v*' # Trigger workflow on tags like v1.0.0, v1.2, etc.
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build_and_release:
-    name: Build & Publish Release
-    runs-on: macos-14 # Ensures we are running on a macOS environment with Xcode 15+
-
+  release:
+    runs-on: macos-15
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Select Xcode Version
-        run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
-
-      - name: Build macOS App
+      - name: Read version from Xcode project
+        id: version
         run: |
-          xcodebuild -scheme V-Dock \
+          VERSION=$(grep -m1 'MARKETING_VERSION' V-Dock.xcodeproj/project.pbxproj | sed 's/.*= //;s/;//;s/ //g')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $VERSION"
+
+      - name: Check if version tag exists
+        id: tag_check
+        run: |
+          TAG="v${{ steps.version.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists — skipping release"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "New version $TAG — proceeding with release"
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build app (unsigned)
+        if: steps.tag_check.outputs.skip == 'false'
+        run: |
+          xcodebuild clean build \
             -project V-Dock.xcodeproj \
+            -scheme V-Dock \
             -configuration Release \
-            -derivedDataPath build \
+            -derivedDataPath build/derived \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            build
+            CODE_SIGNING_ALLOWED=NO
 
-      - name: Zip the Application
+      - name: Create DMG
+        if: steps.tag_check.outputs.skip == 'false'
         run: |
-          cd build/Build/Products/Release
-          zip -r ../../../../V-Dock.app.zip V-Dock.app
+          APP_PATH="build/derived/Build/Products/Release/V-Dock.app"
+          DMG_PATH="V-Dock-${{ steps.version.outputs.version }}.dmg"
+          hdiutil create -volname "V-Dock" \
+            -srcfolder "$APP_PATH" \
+            -ov -format UDZO \
+            "$DMG_PATH"
 
       - name: Create GitHub Release
+        if: steps.tag_check.outputs.skip == 'false'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: V-Dock v${{ steps.version.outputs.version }}
+          files: V-Dock-${{ steps.version.outputs.version }}.dmg
           generate_release_notes: true
-          files: V-Dock.app.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

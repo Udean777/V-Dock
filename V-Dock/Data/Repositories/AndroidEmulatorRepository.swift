@@ -77,6 +77,8 @@ extension AndroidEmulatorRepository: DeviceLifecycleProtocol {
     
     func wipeData(device: Device) async throws {
         guard let path = emulatorPath else { return }
+        _ = try? await shell.run("/usr/bin/pkill", args: ["-f", "qemu.*\(device.id)"])
+        try await Task.sleep(nanoseconds: 2_000_000_000)
         try shell.runDetached(path, args: ["-avd", device.id, "-wipe-data"])
     }
     
@@ -86,55 +88,80 @@ extension AndroidEmulatorRepository: DeviceLifecycleProtocol {
 }
 
 extension AndroidEmulatorRepository: MediaCaptureProtocol {
-    private var adbPath: String? {
+    var adbPath: String? {
         guard let sdkPath = resolveSDKPath() else { return nil }
         return "\(sdkPath)/platform-tools/adb"
     }
-    
-    // We need to find the adb serial (e.g. emulator-5554) for the given AVD name.
-    // For simplicity in this implementation plan, we assume adb targets it or we just use adb shell screencap.
-    // However, AVD name is not the adb serial. To be perfectly accurate we'd need to map AVD name to adb serial.
-    // A quick workaround for a single running emulator is just using default adb.
-    // Assuming `adb -s <serial>` is needed, but we only have `device.id` (AVD name).
-    // In a real app we'd map it. For now, we will use `-e` to target the only running emulator,
-    // or try to find the serial. Let's use `adb -e` for this implementation.
+
+    /// Maps an AVD name (e.g. "Pixel_8_Pro") to its ADB transport serial (e.g. "emulator-5554").
+    /// Queries every running emulator via `adb -s <serial> emu avd name` and returns the match.
+    func adbSerial(for avdName: String) async -> String? {
+        guard let adb = adbPath else { return nil }
+        // Get all connected serials
+        guard let devicesOutput = try? await shell.run(adb, args: ["devices"]) else { return nil }
+        let serials = devicesOutput
+            .split(separator: "\n")
+            .dropFirst() // skip "List of devices attached"
+            .compactMap { line -> String? in
+                let parts = line.split(separator: "\t")
+                guard parts.count == 2, parts[1].trimmingCharacters(in: .whitespaces) == "device" else { return nil }
+                return String(parts[0])
+            }
+
+        for serial in serials {
+            if let name = try? await shell.run(adb, args: ["-s", serial, "emu", "avd", "name"]) {
+                // Output uses \r\n line endings: "Pixel_8_Pro\r\nOK\r\n"
+                let firstLine = name
+                    .components(separatedBy: .newlines)
+                    .first?
+                    .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                if firstLine == avdName {
+                    return serial
+                }
+            }
+        }
+        return nil
+    }
     
     func takeScreenshot(device: Device, destination: URL) async throws {
         guard let adb = adbPath else { return }
-        _ = try await shell.run(adb, args: ["-e", "shell", "screencap", "-p", "/sdcard/screen.png"])
-        _ = try await shell.run(adb, args: ["-e", "pull", "/sdcard/screen.png", destination.path])
-        _ = try await shell.run(adb, args: ["-e", "shell", "rm", "/sdcard/screen.png"])
+        let s = await adbSerial(for: device.id) ?? "-e"
+        let flag = s == "-e" ? ["-e"] : ["-s", s]
+        _ = try await shell.run(adb, args: flag + ["shell", "screencap", "-p", "/sdcard/screen.png"])
+        _ = try await shell.run(adb, args: flag + ["pull", "/sdcard/screen.png", destination.path])
+        _ = try await shell.run(adb, args: flag + ["shell", "rm", "/sdcard/screen.png"])
     }
-    
+
     func startRecording(device: Device, destination: URL) async throws {
         guard let adb = adbPath else { return }
+        let s = await adbSerial(for: device.id) ?? "-e"
+        let flag = s == "-e" ? ["-e"] : ["-s", s]
         let processID = "record_android_\(device.id)"
-        try await shell.spawn(id: processID, executable: adb, args: ["-e", "shell", "screenrecord", "/sdcard/vid.mp4"])
+        try await shell.spawn(id: processID, executable: adb, args: flag + ["shell", "screenrecord", "/sdcard/vid.mp4"])
     }
-    
+
     func stopRecording(device: Device) async throws {
         guard let adb = adbPath else { return }
+        let s = await adbSerial(for: device.id) ?? "-e"
+        let flag = s == "-e" ? ["-e"] : ["-s", s]
         let processID = "record_android_\(device.id)"
         await shell.terminate(id: processID)
-        
-        // Wait for the video to finish encoding on the device
+
         try await Task.sleep(nanoseconds: 2_000_000_000)
-        
-        // Find the destination url (we need to pass it here, but the protocol doesn't have destination in stopRecording)
-        // Wait, the plan didn't store destination in stopRecording. 
-        // We'll just pull it to Desktop for now.
+
         let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
         let dest = desktop.appendingPathComponent("V-Dock_Android_\(Int(Date().timeIntervalSince1970)).mp4").path
-        
-        _ = try? await shell.run(adb, args: ["-e", "pull", "/sdcard/vid.mp4", dest])
-        _ = try? await shell.run(adb, args: ["-e", "shell", "rm", "/sdcard/vid.mp4"])
+        _ = try? await shell.run(adb, args: flag + ["pull", "/sdcard/vid.mp4", dest])
+        _ = try? await shell.run(adb, args: flag + ["shell", "rm", "/sdcard/vid.mp4"])
     }
 }
 
 extension AndroidEmulatorRepository: QuickTogglesProtocol {
     func setDarkMode(device: Device, isDark: Bool) async throws {
         guard let adb = adbPath else { return }
-        _ = try await shell.run(adb, args: ["-e", "shell", "cmd", "uimode", "night", isDark ? "yes" : "no"])
+        let s = await adbSerial(for: device.id) ?? "-e"
+        let flag = s == "-e" ? ["-e"] : ["-s", s]
+        _ = try await shell.run(adb, args: flag + ["shell", "cmd", "uimode", "night", isDark ? "yes" : "no"])
     }
 }
 
@@ -142,19 +169,9 @@ extension AndroidEmulatorRepository: LogStreamProtocol {
     func streamLogs(for device: Device) -> AsyncStream<String> {
         guard let adb = adbPath else { return AsyncStream { $0.finish() } }
         let processID = "log_android_\(device.id)"
+        // streamLogs is sync — fall back to -e (single emulator) or best effort with AVD name
+        // A full fix would require making the protocol async; -e works for the common single-emulator case.
         return shell.stream(id: processID, executable: adb, args: ["-e", "logcat", "-v", "brief"])
     }
 }
 
-extension AndroidEmulatorRepository: NetworkProxyProtocol {
-    func setProxy(device: Device, host: String, port: Int) async throws {
-        guard let adb = adbPath else { return }
-        // Note: For Android Emulator, localhost from Mac is usually 10.0.2.2.
-        _ = try await shell.run(adb, args: ["-s", device.id, "shell", "settings", "put", "global", "http_proxy", "\(host):\(port)"])
-    }
-    
-    func clearProxy(device: Device) async throws {
-        guard let adb = adbPath else { return }
-        _ = try await shell.run(adb, args: ["-s", device.id, "shell", "settings", "put", "global", "http_proxy", ":0"])
-    }
-}

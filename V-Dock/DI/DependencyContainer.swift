@@ -27,17 +27,11 @@ final class DependencyContainer {
             iosStream: simulatorRepo,
             androidStream: androidRepo
         )
-        let networkProxyUseCase = NetworkProxyUseCase(
-            androidRepo: androidRepo,
-            iosRepo: simulatorRepo
-        )
-        let networkSnifferUseCase = NetworkSnifferUseCase(
-            proxyServer: LocalProxyServer()
-        )
-        let androidScreenMirror = AndroidScreenMirror(shell: shell)
-        let screenMirrorUseCase = ScreenMirrorUseCase(androidMirror: androidScreenMirror)
-        
         let pairingUseCase = WirelessPairingUseCase(wirelessRepo: wirelessRepo)
+        
+        let androidPushFileRepo = AndroidPushFileRepository(executor: shell)
+        let iosPushFileRepo = IOSSimulatorPushFileRepository(executor: shell)
+        let pushFileUseCase = PushFileUseCase(androidRepo: androidPushFileRepo, iosRepo: iosPushFileRepo)
 
         appState = AppState(
             discoverUseCase: discoverUseCase,
@@ -46,10 +40,8 @@ final class DependencyContainer {
             mediaCaptureUseCase: mediaCaptureUseCase,
             quickTogglesUseCase: quickTogglesUseCase,
             logStreamUseCase: logStreamUseCase,
-            networkProxyUseCase: networkProxyUseCase,
-            networkSnifferUseCase: networkSnifferUseCase,
-            mirrorUseCase: screenMirrorUseCase,
-            pairingUseCase: pairingUseCase
+            pairingUseCase: pairingUseCase,
+            pushFileUseCase: pushFileUseCase
         )
     }
 }

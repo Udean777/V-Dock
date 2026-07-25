@@ -2,150 +2,12 @@ import SwiftUI
 
 struct MenuBarView: View {
     @Environment(AppState.self) var state
-    
+
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack(spacing: 8) {
-                if let appIcon = NSImage(named: NSImage.applicationIconName) {
-                    Image(nsImage: appIcon)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 20, height: 20)
-                }
-                
-                Text("V-Dock")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                
-                if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
-                    Text("v\(version)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .padding(.leading, 4)
-                }
-                
-                Spacer()
-            }
-            .padding()
-            .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
-            
-            Divider()
-            
-            ScrollView {
-                VStack(spacing: 16) {
-                    let running = state.devices.filter { $0.status == .booted }
-                    
-                    // Running Devices Section
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Running Devices")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            if !running.isEmpty {
-                                Button {
-                                    Task {
-                                        for device in running {
-                                            await state.perform(.shutdown, on: device)
-                                        }
-                                    }
-                                } label: {
-                                    Text("Stop All")
-                                        .font(.caption)
-                                        .bold()
-                                        .foregroundStyle(.red)
-                                }
-                                .buttonStyle(.plain)
-                                .disabled(state.isProcessingAction)
-                            }
-                        }
-                        
-                        if running.isEmpty {
-                            VStack(spacing: 6) {
-                                Image(systemName: "sleep")
-                                    .font(.largeTitle)
-                                    .foregroundStyle(.tertiary)
-                                Text("No running devices")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Color(NSColor.controlBackgroundColor).opacity(0.3), in: RoundedRectangle(cornerRadius: 12))
-                        } else {
-                            ForEach(running) { device in
-                                MenuBarDeviceRow(device: device, state: state)
-                            }
-                        }
-                    }
-                    
-                    // Pinned Devices Section
-                    let offlinePinned = state.pinnedDevices.filter { $0.status != .booted }
-                    if !offlinePinned.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Pinned Devices")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.secondary)
-                            
-                            ForEach(offlinePinned) { device in
-                                MenuBarDeviceRow(device: device, state: state)
-                            }
-                        }
-                    }
-                }
-                .padding()
-            }
-            .frame(height: 350)
-            
-            Divider()
-            
-            // Footer
-            VStack(spacing: 8) {
-                Button {
-                    openDashboardWindow()
-                } label: {
-                    HStack {
-                        Image(systemName: "macwindow.on.rectangle")
-                        Text("Open Dashboard")
-                            .fontWeight(.medium)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 8))
-                    .foregroundStyle(.white)
-                }
-                .buttonStyle(.plain)
-                
-                Button("Pair Wireless Device", systemImage: "wifi") {
-                    openPairingWindow()
-                }
-                .buttonStyle(.link)
-                
-                Divider()
-                
-                HStack {
-                    Button("Settings") {
-                        openSettingsWindow()
-                    }
-                    .buttonStyle(.link)
-                    .keyboardShortcut(",", modifiers: .command)
-                    
-                    Spacer()
-                    
-                    Button("Quit") {
-                        UserDefaults.standard.set(true, forKey: "shouldTerminate")
-                        NSApplication.shared.terminate(nil)
-                    }
-                    .buttonStyle(.link)
-                    .foregroundStyle(.red)
-                }
-                .padding(.top, 4)
-            }
-            .padding()
-            .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+            header
+            deviceList
+            footer
         }
         .frame(width: 300)
         .background(.regularMaterial)
@@ -163,31 +25,177 @@ struct MenuBarView: View {
                 openLogcatWindow(for: device)
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OpenNetworkSniffer"))) { notification in
-            if let device = notification.object as? Device {
-                openNetworkSnifferWindow(for: device)
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OpenScreenMirror"))) { notification in
-            if let device = notification.object as? Device {
-                openMirrorWindow(for: device)
-            }
-        }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OpenPairing"))) { _ in
             openPairingWindow()
         }
     }
-    
+
+    // MARK: - Header
+
+    private var header: some View {
+        HStack(spacing: 8) {
+            if let appIcon = NSImage(named: NSImage.applicationIconName) {
+                Image(nsImage: appIcon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 18, height: 18)
+            }
+
+            Text("V-Dock")
+                .font(.headline)
+                .fontWeight(.semibold)
+
+            if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+                Text("v\(version)")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+
+            Spacer()
+
+            if state.isRefreshing {
+                ProgressView()
+                    .controlSize(.small)
+                    .scaleEffect(0.7)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+    }
+
+    // MARK: - Device List
+
+    private var deviceList: some View {
+        let running = state.devices.filter { $0.status == .booted }
+        let offlinePinned = state.pinnedDevices.filter { $0.status != .booted }
+
+        return ScrollView {
+            VStack(spacing: 0) {
+                if !running.isEmpty {
+                    SectionHeader(title: "Running Devices", count: running.count) {
+                        Button("Stop All") {
+                            Task {
+                                for device in running {
+                                    await state.perform(.shutdown, on: device)
+                                }
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .buttonStyle(.plain)
+                        .disabled(state.isProcessingAction)
+                    }
+                    sectionContent {
+                        ForEach(running) { device in
+                            MenuBarDeviceRow(device: device, state: state)
+                        }
+                    }
+                }
+
+                if running.isEmpty && offlinePinned.isEmpty {
+                    emptyState
+                }
+
+                if !offlinePinned.isEmpty {
+                    SectionHeader(title: "Pinned Devices", count: offlinePinned.count) { EmptyView() }
+                    sectionContent {
+                        ForEach(offlinePinned) { device in
+                            MenuBarDeviceRow(device: device, state: state)
+                        }
+                    }
+                }
+            }
+            .padding(.vertical, 6)
+        }
+        .frame(height: 320)
+    }
+
+    private func sectionContent(@ViewBuilder _ content: () -> some View) -> some View {
+        VStack(spacing: 2) {
+            content()
+        }
+        .padding(.horizontal, 8)
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            Spacer().frame(height: 12)
+            Image(systemName: "rectangle.3.group")
+                .font(.title3)
+                .foregroundStyle(.tertiary)
+            Text("No devices detected")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("Refresh automatically every 10s")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+            Spacer().frame(height: 12)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Footer
+
+    private var footer: some View {
+        VStack(spacing: 0) {
+            Divider()
+
+            VStack(spacing: 6) {
+                Button {
+                    openDashboardWindow()
+                } label: {
+                    Label("Open Dashboard", systemImage: "macwindow.on.rectangle")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 7)
+                        .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 7))
+                        .foregroundStyle(.white)
+                }
+                .buttonStyle(.plain)
+
+                HStack(spacing: 8) {
+                    Button("Pair Wireless", systemImage: "wifi") {
+                        openPairingWindow()
+                    }
+                    .buttonStyle(.link)
+                    .font(.caption)
+
+                    Spacer()
+
+                    Button("Settings", systemImage: "gearshape") {
+                        openSettingsWindow()
+                    }
+                    .buttonStyle(.link)
+                    .font(.caption)
+                    .keyboardShortcut(",", modifiers: .command)
+
+                    Button("Quit", systemImage: "xmark") {
+                        UserDefaults.standard.set(true, forKey: "shouldTerminate")
+                        NSApplication.shared.terminate(nil)
+                    }
+                    .buttonStyle(.link)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+        }
+    }
+
+    // MARK: - Window management
+
     private func openDashboardWindow() {
         NSApp.setActivationPolicy(.regular)
-        
+
         if let window = NSApp.windows.first(where: { $0.title == "Dashboard" || $0.title == "Devices" }) {
             window.makeKeyAndOrderFront(nil)
             window.orderFrontRegardless()
             NSApp.activate(ignoringOtherApps: true)
             return
         }
-        
+
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
@@ -202,17 +210,17 @@ struct MenuBarView: View {
         window.orderFrontRegardless()
         NSApp.activate(ignoringOtherApps: true)
     }
-    
+
     private func openSettingsWindow() {
         NSApp.setActivationPolicy(.regular)
-        
+
         if let window = NSApp.windows.first(where: { $0.title == "Settings" }) {
             window.makeKeyAndOrderFront(nil)
             window.orderFrontRegardless()
             NSApp.activate(ignoringOtherApps: true)
             return
         }
-        
+
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 500, height: 350),
             styleMask: [.titled, .closable, .miniaturizable],
@@ -227,10 +235,10 @@ struct MenuBarView: View {
         window.orderFrontRegardless()
         NSApp.activate(ignoringOtherApps: true)
     }
-    
+
     private func openLogcatWindow(for device: Device) {
         NSApp.setActivationPolicy(.regular)
-        
+
         let windowTitle = "Logcat: \(device.name)"
         if let window = NSApp.windows.first(where: { $0.title == windowTitle }) {
             window.makeKeyAndOrderFront(nil)
@@ -238,7 +246,7 @@ struct MenuBarView: View {
             NSApp.activate(ignoringOtherApps: true)
             return
         }
-        
+
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 900, height: 600),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
@@ -247,74 +255,13 @@ struct MenuBarView: View {
         window.title = windowTitle
         window.isRestorable = false
         window.isReleasedWhenClosed = false
-        
         window.contentView = NSHostingView(rootView: LogcatView(device: device).environment(state))
-        
         setupWindowObserver(for: window)
-        
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
         NSApp.activate(ignoringOtherApps: true)
     }
-    
-    private func openNetworkSnifferWindow(for device: Device) {
-        NSApp.setActivationPolicy(.regular)
-        
-        let windowTitle = "Network Sniffer: \(device.name)"
-        if let window = NSApp.windows.first(where: { $0.title == windowTitle }) {
-            window.makeKeyAndOrderFront(nil)
-            window.orderFrontRegardless()
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-        
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1000, height: 700),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
-            backing: .buffered, defer: false)
-        window.center()
-        window.title = windowTitle
-        window.isRestorable = false
-        window.isReleasedWhenClosed = false
-        
-        window.contentView = NSHostingView(rootView: NetworkSnifferView(device: device).environment(state))
-        
-        setupWindowObserver(for: window)
-        
-        window.makeKeyAndOrderFront(nil)
-        window.orderFrontRegardless()
-        NSApp.activate(ignoringOtherApps: true)
-    }
-    
-    private func openMirrorWindow(for device: Device) {
-        NSApp.setActivationPolicy(.regular)
-        
-        let windowTitle = "Mirror: \(device.name)"
-        if let window = NSApp.windows.first(where: { $0.title == windowTitle }) {
-            window.makeKeyAndOrderFront(nil)
-            window.orderFrontRegardless()
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-        
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 1000),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
-            backing: .buffered, defer: false)
-        window.center()
-        window.title = windowTitle
-        window.isRestorable = false
-        window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: ScreenMirrorView(device: device).environment(state)
-        )
-        
-        setupWindowObserver(for: window)
-        
-        window.makeKeyAndOrderFront(nil)
-        window.orderFrontRegardless()
-        NSApp.activate(ignoringOtherApps: true)
-    }
-    
+
     private func openPairingWindow() {
         NSApp.setActivationPolicy(.regular)
 
@@ -336,9 +283,7 @@ struct MenuBarView: View {
         window.contentView = NSHostingView(
             rootView: PairDeviceView(pairingUseCase: state.pairingUseCase)
         )
-
         setupWindowObserver(for: window)
-
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
         NSApp.activate(ignoringOtherApps: true)
@@ -348,7 +293,7 @@ struct MenuBarView: View {
     private func setupWindowObserver(for window: NSWindow) {
         NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { _ in
             let remainingWindows = NSApp.windows.filter {
-                $0 != window && $0.isVisible && ($0.title == "Dashboard" || $0.title == "Devices" || $0.title == "Settings" || $0.title.hasPrefix("Logcat: ") || $0.title.hasPrefix("Network Sniffer: ") || $0.title.hasPrefix("Mirror: ") || $0.title == "Pair Wireless Device")
+                $0 != window && $0.isVisible && ($0.title == "Dashboard" || $0.title == "Devices" || $0.title == "Settings" || $0.title.hasPrefix("Logcat: ") || $0.title == "Pair Wireless Device")
             }
             if remainingWindows.isEmpty {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -359,134 +304,209 @@ struct MenuBarView: View {
     }
 }
 
+// MARK: - Device Row
+
 struct MenuBarDeviceRow: View {
     let device: Device
     let state: AppState
-    
-    @State private var showWipeConfirm = false
-    @State private var showColdBootConfirm = false
-    
+
+    @State private var pushFileVM: PushFileViewModel?
+    @State private var isTargetedForDrop = false
+
     var body: some View {
-        HStack {
-            Image(systemName: device.platform == .ios ? "apple.logo" : "a.circle.fill")
-                .font(.title2)
-                .foregroundStyle(device.platform == .ios ? .gray : .green)
-                .frame(width: 24)
-            
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 0) {
+            statusDot
+                .padding(.trailing, 8)
+
+            VStack(alignment: .leading, spacing: 1) {
                 Text(device.name)
                     .font(.caption)
                     .fontWeight(.medium)
                     .lineLimit(1)
-                
-                StatusBadgeView(status: device.status)
+
+                HStack(spacing: 4) {
+                    StatusBadgeView(status: device.status)
+                    if device.status == .booted {
+                        Text(device.platform == .ios ? "Simulator" : "Emulator")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                    if let vm = pushFileVM, vm.isTransferring {
+                        ProgressView()
+                            .controlSize(.small)
+                            .scaleEffect(0.6)
+                    }
+                }
             }
-            
-            Spacer()
-            
+
+            Spacer(minLength: 4)
+
             if device.status == .booted {
-                Button {
-                    Task { await state.takeScreenshot(for: device) }
-                } label: {
-                    Image(systemName: "camera")
-                        .font(.caption)
-                        .padding(6)
-                        .background(Color.secondary.opacity(0.1), in: Circle())
-                        .foregroundStyle(.secondary)
+                HStack(spacing: 2) {
+                    Menu {
+                        Button {
+                            pushFileVM?.pickFileAndPush(to: device)
+                        } label: {
+                            Label("Push File...", systemImage: "square.and.arrow.down")
+                        }
+
+                        Button {
+                            Task { await state.takeScreenshot(for: device) }
+                        } label: {
+                            Label("Take Screenshot", systemImage: "camera")
+                        }
+
+                        let isRecording = state.recordingDeviceID == device.id
+                        Button {
+                            Task { await state.toggleRecording(for: device) }
+                        } label: {
+                            Label(isRecording ? "Stop Recording" : "Start Recording", systemImage: isRecording ? "stop.fill" : "record.circle")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(6)
+                    }
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .fixedSize()
+                    .help("More actions")
+
+                    powerButton
                 }
-                .buttonStyle(.plain)
-                .help("Take Screenshot")
-                
-                let isRecording = state.recordingDeviceID == device.id
-                Button {
-                    Task { await state.toggleRecording(for: device) }
-                } label: {
-                    Image(systemName: isRecording ? "stop.fill" : "record.circle")
-                        .font(.caption)
-                        .padding(6)
-                        .background(isRecording ? Color.red.opacity(0.2) : Color.secondary.opacity(0.1), in: Circle())
-                        .foregroundStyle(isRecording ? .red : .secondary)
-                        .symbolEffect(.pulse, options: .repeating, isActive: isRecording)
-                }
-                .buttonStyle(.plain)
-                .help(isRecording ? "Stop Recording" : "Start Recording")
+            } else {
+                powerButton
             }
-            
-            Button {
-                let action: DeviceAction = device.status == .booted ? .shutdown : .boot
-                Task { await state.perform(action, on: device) }
-            } label: {
-                Image(systemName: device.status == .booted ? "power" : "play.fill")
-                    .font(.caption)
-                    .padding(6)
-                    .background(device.status == .booted ? Color.red.opacity(0.1) : Color.green.opacity(0.1), in: Circle())
-                    .foregroundStyle(device.status == .booted ? .red : .green)
-            }
-            .buttonStyle(.plain)
-            .disabled(state.isProcessingAction)
         }
-        .padding(12)
-        .background(Color(NSColor.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(isTargetedForDrop ? Color.accentColor.opacity(0.15) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
+        .background(.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 8))
+        .dropDestination(for: URL.self) { urls, _ in
+            guard !urls.isEmpty, device.status == .booted else { return false }
+            Task { @MainActor in
+                await pushFileVM?.push(files: urls, to: device)
+            }
+            return true
+        } isTargeted: { targeted in
+            if device.status == .booted {
+                isTargetedForDrop = targeted
+            }
+        }
         .contextMenu {
-            if device.platform == .ios {
-                if device.status == .shutdown {
-                    Button("Boot", systemImage: "play") { Task { await state.perform(.boot, on: device) } }
-                } else {
-                    Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
-                    Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
-                    Divider()
-                    Button("Mirror Screen", systemImage: "display") { state.openMirror(for: device) }
-                    Menu("Appearance", systemImage: "paintbrush") {
-                        Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
-                        Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
-                    }
-                    Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
-                    Button("Network Sniffer", systemImage: "network") { state.openNetworkSniffer(for: device) }
-                    Divider()
-                    Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
+            if device.status == .shutdown {
+                Button("Boot", systemImage: "play") { Task { await state.perform(.boot, on: device) } }
+                if device.platform == .android {
+                    Button("Cold Boot", systemImage: "bolt") { confirmColdBoot() }
                 }
-                Button("Erase All Content & Settings", systemImage: "trash", role: .destructive) { showWipeConfirm = true }
+            } else {
+                Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
+                Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
+                Divider()
+                Menu("Appearance", systemImage: "paintbrush") {
+                    Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
+                    Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
+                }
+                Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
+                Divider()
+                Button("Cold Boot", systemImage: "bolt") { confirmColdBoot() }
             }
-            
-            if device.platform == .android {
-                if device.status == .shutdown {
-                    Button("Boot", systemImage: "play") { Task { await state.perform(.boot, on: device) } }
-                    Button("Cold Boot", systemImage: "bolt") { showColdBootConfirm = true }
-                } else {
-                    Button("Shutdown", systemImage: "stop") { Task { await state.perform(.shutdown, on: device) } }
-                    Button("Force Kill", systemImage: "xmark.octagon") { Task { await state.perform(.forceKill, on: device) } }
-                    Divider()
-                    Menu("Appearance", systemImage: "paintbrush") {
-                        Button("Dark Mode", systemImage: "moon.fill") { Task { await state.setDarkMode(for: device, isDark: true) } }
-                        Button("Light Mode", systemImage: "sun.max.fill") { Task { await state.setDarkMode(for: device, isDark: false) } }
-                    }
-                    Button("Show Logcat", systemImage: "list.bullet.rectangle") { state.openLogcat(for: device) }
-                    Button("Network Sniffer", systemImage: "network") { state.openNetworkSniffer(for: device) }
-                    Divider()
-                    Button("Mirror Screen", systemImage: "display") { state.openMirror(for: device) }
-                    Divider()
-                    Button("Cold Boot (Restart)", systemImage: "bolt.fill") { showColdBootConfirm = true }
-                }
-                Button("Wipe Data", systemImage: "trash", role: .destructive) { showWipeConfirm = true }
+            Button(device.platform == .ios ? "Erase All Content & Settings" : "Wipe Data",
+                   systemImage: "trash", role: .destructive) { confirmWipe() }
+        }
+        .onAppear {
+            if pushFileVM == nil {
+                pushFileVM = PushFileViewModel(useCase: state.pushFileUseCase)
             }
         }
-        .destructiveActionAlert(
-            title: "Erase \(device.name)?",
-            message: device.platform == .ios
+    }
+
+    private var statusDot: some View {
+        Circle()
+            .fill(device.status == .booted ? Color.green : Color.secondary.opacity(0.4))
+            .frame(width: 6, height: 6)
+    }
+
+    private var powerButton: some View {
+        Button {
+            let action: DeviceAction = device.status == .booted ? .shutdown : .boot
+            Task { await state.perform(action, on: device) }
+        } label: {
+            Image(systemName: device.status == .booted ? "power" : "play.fill")
+                .font(.caption)
+                .foregroundStyle(device.status == .booted ? .red : .green)
+                .padding(6)
+                .background((device.status == .booted ? Color.red : Color.green).opacity(0.1), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(state.isProcessingAction)
+        .help(device.status == .booted ? "Shutdown" : "Boot")
+    }
+
+    private func confirmWipe() {
+        let alert = NSAlert()
+        alert.messageText = "Erase \(device.name)?"
+        alert.informativeText = device.platform == .ios
             ? "This will permanently erase all content and settings on this simulator, including installed apps and their data."
-            : "This will wipe all user data on this emulator. The AVD configuration will remain intact.",
-            confirmLabel: device.platform == .ios ? "Erase All Content" : "Wipe Data",
-            isPresented: $showWipeConfirm
-        ) {
-            await state.perform(.wipeData, on: device)
+            : "This will wipe all user data on this emulator. The AVD configuration will remain intact."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: device.platform == .ios ? "Erase All Content" : "Wipe Data")
+        alert.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            Task { await state.perform(.wipeData, on: device) }
         }
-        .destructiveActionAlert(
-            title: "Cold Boot \(device.name)?",
-            message: "The device will be shut down and restarted from a clean state, discarding any saved snapshot.",
-            confirmLabel: "Cold Boot",
-            isPresented: $showColdBootConfirm
-        ) {
-            await state.perform(.coldBoot, on: device)
+    }
+
+    private func confirmColdBoot() {
+        let alert = NSAlert()
+        alert.messageText = "Cold Boot \(device.name)?"
+        alert.informativeText = "The device will be shut down and restarted from a clean state, discarding any saved snapshot."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Cold Boot")
+        alert.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            Task { await state.perform(.coldBoot, on: device) }
         }
+    }
+}
+
+// MARK: - Section Header
+
+struct SectionHeader<Trailing: View>: View {
+    let title: String
+    let count: Int
+    @ViewBuilder let trailing: Trailing
+
+    init(title: String, count: Int, @ViewBuilder trailing: () -> Trailing) {
+        self.title = title
+        self.count = count
+        self.trailing = trailing()
+    }
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
+
+            Text("\(count)")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 1)
+                .background(.quaternary.opacity(0.4), in: Capsule())
+
+            Spacer()
+            trailing
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 10)
+        .padding(.bottom, 4)
     }
 }

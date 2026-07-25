@@ -33,11 +33,8 @@ final class AppState {
     private let mediaCaptureUseCase: MediaCaptureUseCase
     private let quickTogglesUseCase: QuickTogglesUseCase
     let logStreamUseCase: LogStreamUseCase
-    let networkProxyUseCase: NetworkProxyUseCase
-    let networkSnifferUseCase: NetworkSnifferUseCase
-    let mirrorUseCase: ScreenMirrorUseCase
     let pairingUseCase: WirelessPairingUseCase
-    var mirroringDeviceID: String?
+    let pushFileUseCase: PushFileUseCase
     
     init(
         discoverUseCase: DiscoverDevicesUseCase,
@@ -46,10 +43,8 @@ final class AppState {
         mediaCaptureUseCase: MediaCaptureUseCase,
         quickTogglesUseCase: QuickTogglesUseCase,
         logStreamUseCase: LogStreamUseCase,
-        networkProxyUseCase: NetworkProxyUseCase,
-        networkSnifferUseCase: NetworkSnifferUseCase,
-        mirrorUseCase: ScreenMirrorUseCase,
-        pairingUseCase: WirelessPairingUseCase
+        pairingUseCase: WirelessPairingUseCase,
+        pushFileUseCase: PushFileUseCase
     ) {
         self.discoverUseCase = discoverUseCase
         self.lifecycleUseCase = lifecycleUseCase
@@ -57,13 +52,11 @@ final class AppState {
         self.mediaCaptureUseCase = mediaCaptureUseCase
         self.quickTogglesUseCase = quickTogglesUseCase
         self.logStreamUseCase = logStreamUseCase
-        self.networkProxyUseCase = networkProxyUseCase
-        self.networkSnifferUseCase = networkSnifferUseCase
         pinnedIDs = Set(UserDefaults.standard.stringArray(forKey: "pinnedIDs") ?? [])
         androidSDKPath = UserDefaults.standard.string(forKey: "androidSDKPath") ?? ""
         isLaunchAtLoginEnabled = SMAppService.mainApp.status == .enabled
-        self.mirrorUseCase = mirrorUseCase
         self.pairingUseCase = pairingUseCase
+        self.pushFileUseCase = pushFileUseCase
     }
     
     var hasAndroidSDK: Bool {
@@ -80,6 +73,16 @@ final class AppState {
         isRefreshing = true
         refreshError = nil
         let result = await discoverUseCase.execute()
+        
+        // Detect newly booted devices
+        let newlyBooted = result.devices.filter { newDev in
+            newDev.status == .booted && devices.contains(where: { oldDev in oldDev.id == newDev.id && oldDev.status != .booted })
+        }
+        
+        for dev in newlyBooted {
+            NotificationManager.shared.sendNotification(title: "Device Ready", body: "\(dev.name) has finished booting.")
+        }
+        
         devices = result.devices
         if !result.errors.isEmpty {
             refreshError = result.errors.joined(separator: "\n")
@@ -94,8 +97,17 @@ final class AppState {
         
         do {
             try await lifecycleUseCase.execute(action, on: device)
+            
+            if action == .wipeData {
+                let message = device.platform == .ios ? "Factory reset complete." : "Data wiped successfully."
+                NotificationManager.shared.sendNotification(title: "Wipe Complete", body: "\(device.name): \(message)")
+            } else if action == .coldBoot {
+                NotificationManager.shared.sendNotification(title: "Cold Boot Initiated", body: "\(device.name) is restarting from a clean state.")
+            }
+            
         } catch {
             actionError = "Failed to \(action): \(error.localizedDescription)"
+            NotificationManager.shared.sendNotification(title: "Action Failed", body: actionError ?? "")
         }
         await refresh()
     }
@@ -140,8 +152,10 @@ final class AppState {
         do {
             try await mediaCaptureUseCase.takeScreenshot(device: device, destination: dest)
             NSSound(named: "Purr")?.play() // Feedback suara macOS bawaan
+            NotificationManager.shared.sendNotification(title: "Screenshot Saved", body: "Saved to Desktop as \(filename)")
         } catch {
             actionError = "Failed to take screenshot: \(error.localizedDescription)"
+            NotificationManager.shared.sendNotification(title: "Screenshot Failed", body: error.localizedDescription)
         }
     }
     
@@ -152,8 +166,10 @@ final class AppState {
             do {
                 try await mediaCaptureUseCase.stopRecording(device: device)
                 NSSound(named: "Glass")?.play()
+                NotificationManager.shared.sendNotification(title: "Recording Saved", body: "Screen recording saved to Desktop.")
             } catch {
                 actionError = "Failed to stop recording: \(error.localizedDescription)"
+                NotificationManager.shared.sendNotification(title: "Recording Failed", body: error.localizedDescription)
             }
         } else {
             // Ensure any existing recording is stopped first (only 1 at a time)
@@ -171,6 +187,7 @@ final class AppState {
                 NSSound(named: "Tink")?.play()
             } catch {
                 actionError = "Failed to start recording: \(error.localizedDescription)"
+                NotificationManager.shared.sendNotification(title: "Recording Failed", body: error.localizedDescription)
             }
         }
     }
@@ -192,36 +209,6 @@ final class AppState {
         NotificationCenter.default.post(name: NSNotification.Name("OpenLogcat"), object: device)
     }
     
-    func openMirror(for device: Device) {
-        NotificationCenter.default.post(name: NSNotification.Name("OpenScreenMirror"), object: device)
-    }
-    
-    func startMirrorStream(for device: Device) -> AsyncStream<CGImage> {
-        mirroringDeviceID = device.id
-        return mirrorUseCase.startMirror(device: device)
-    }
-    
-    func stopMirror(for device: Device) {
-        mirrorUseCase.stopMirror(device: device)
-        mirroringDeviceID = nil
-    }
-    
-    func sendTouch(device: Device, x: Int, y: Int, action: TouchAction) {
-        mirrorUseCase.sendTouch(device: device, x: x, y: y, action: action)
-    }
-    
-    func sendSwipe(device: Device, x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Int) {
-        mirrorUseCase.sendSwipe(device: device, x1: x1, y1: y1, x2: x2, y2: y2, durationMs: durationMs)
-    }
-    
-    func sendKey(device: Device, key: String) {
-        mirrorUseCase.sendKey(device: device, key: key)
-    }
-    
-    func openNetworkSniffer(for device: Device) {
-        NotificationCenter.default.post(name: NSNotification.Name("OpenNetworkSniffer"), object: device)
-    }
-
     func openPairing() {
         NotificationCenter.default.post(name: NSNotification.Name("OpenPairing"), object: nil)
     }
