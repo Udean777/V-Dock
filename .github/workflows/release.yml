@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
@@ -60,6 +63,8 @@ jobs:
       - name: Create GitHub Release
         if: steps.tag_check.outputs.skip == 'false'
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: V-Dock v${{ steps.version.outputs.version }}
