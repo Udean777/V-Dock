@@ -38,6 +38,10 @@ final class DependencyContainer {
         let screenMirrorUseCase = ScreenMirrorUseCase(androidMirror: androidScreenMirror)
         
         let pairingUseCase = WirelessPairingUseCase(wirelessRepo: wirelessRepo)
+        
+        let androidPushFileRepo = AndroidPushFileRepository(executor: shell)
+        let iosPushFileRepo = IOSSimulatorPushFileRepository(executor: shell)
+        let pushFileUseCase = PushFileUseCase(androidRepo: androidPushFileRepo, iosRepo: iosPushFileRepo)
 
         appState = AppState(
             discoverUseCase: discoverUseCase,
@@ -49,7 +53,8 @@ final class DependencyContainer {
             networkProxyUseCase: networkProxyUseCase,
             networkSnifferUseCase: networkSnifferUseCase,
             mirrorUseCase: screenMirrorUseCase,
-            pairingUseCase: pairingUseCase
+            pairingUseCase: pairingUseCase,
+            pushFileUseCase: pushFileUseCase
         )
     }
 }

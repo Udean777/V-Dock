@@ -11,6 +11,8 @@ struct DeviceCardView: View {
     
     @State private var showWipeConfirm = false
     @State private var showColdBootConfirm = false
+    @State private var pushFileVM: PushFileViewModel?
+    @State private var isTargetedForDrop = false
     
     var body: some View {
         HStack(spacing: 12) {
@@ -23,6 +25,13 @@ struct DeviceCardView: View {
                 HStack {
                     Text(device.name)
                         .font(.body)
+                    
+                    if let vm = pushFileVM, vm.isTransferring {
+                        ProgressView()
+                            .controlSize(.small)
+                            .padding(.leading, 4)
+                    }
+                    
                     Spacer()
                     StatusBadgeView(status: device.status)
                 }
@@ -33,6 +42,15 @@ struct DeviceCardView: View {
             }
             
             if device.status == .booted {
+                Button {
+                    pushFileVM?.pickFileAndPush(to: device)
+                } label: {
+                    Image(systemName: "square.and.arrow.down")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Push File to Device")
+                
                 Button {
                     Task { await state.takeScreenshot(for: device) }
                 } label: {
@@ -58,6 +76,19 @@ struct DeviceCardView: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 4)
+        .background(isTargetedForDrop ? Color.accentColor.opacity(0.1) : Color.clear)
+        .cornerRadius(8)
+        .dropDestination(for: URL.self) { urls, _ in
+            guard !urls.isEmpty, device.status == .booted else { return false }
+            Task { @MainActor in
+                await pushFileVM?.push(files: urls, to: device)
+            }
+            return true
+        } isTargeted: { targeted in
+            if device.status == .booted {
+                isTargetedForDrop = targeted
+            }
+        }
         .contextMenu {
             if device.platform == .ios {
                 if device.status == .shutdown {
@@ -115,6 +146,11 @@ struct DeviceCardView: View {
             isPresented: $showColdBootConfirm
         ) {
             await onPerformAction(.coldBoot)
+        }
+        .onAppear {
+            if pushFileVM == nil {
+                pushFileVM = PushFileViewModel(useCase: state.pushFileUseCase)
+            }
         }
     }
     

@@ -365,6 +365,8 @@ struct MenuBarDeviceRow: View {
     
     @State private var showWipeConfirm = false
     @State private var showColdBootConfirm = false
+    @State private var pushFileVM: PushFileViewModel?
+    @State private var isTargetedForDrop = false
     
     var body: some View {
         HStack {
@@ -379,12 +381,31 @@ struct MenuBarDeviceRow: View {
                     .fontWeight(.medium)
                     .lineLimit(1)
                 
-                StatusBadgeView(status: device.status)
+                HStack {
+                    StatusBadgeView(status: device.status)
+                    if let vm = pushFileVM, vm.isTransferring {
+                        ProgressView()
+                            .controlSize(.small)
+                            .scaleEffect(0.7)
+                    }
+                }
             }
             
             Spacer()
             
             if device.status == .booted {
+                Button {
+                    pushFileVM?.pickFileAndPush(to: device)
+                } label: {
+                    Image(systemName: "square.and.arrow.down")
+                        .font(.caption)
+                        .padding(6)
+                        .background(Color.secondary.opacity(0.1), in: Circle())
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Push File to Device")
+                
                 Button {
                     Task { await state.takeScreenshot(for: device) }
                 } label: {
@@ -426,7 +447,18 @@ struct MenuBarDeviceRow: View {
             .disabled(state.isProcessingAction)
         }
         .padding(12)
-        .background(Color(NSColor.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
+        .background(isTargetedForDrop ? Color.accentColor.opacity(0.2) : Color(NSColor.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
+        .dropDestination(for: URL.self) { urls, _ in
+            guard !urls.isEmpty, device.status == .booted else { return false }
+            Task { @MainActor in
+                await pushFileVM?.push(files: urls, to: device)
+            }
+            return true
+        } isTargeted: { targeted in
+            if device.status == .booted {
+                isTargetedForDrop = targeted
+            }
+        }
         .contextMenu {
             if device.platform == .ios {
                 if device.status == .shutdown {
@@ -487,6 +519,11 @@ struct MenuBarDeviceRow: View {
             isPresented: $showColdBootConfirm
         ) {
             await state.perform(.coldBoot, on: device)
+        }
+        .onAppear {
+            if pushFileVM == nil {
+                pushFileVM = PushFileViewModel(useCase: state.pushFileUseCase)
+            }
         }
     }
 }

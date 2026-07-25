@@ -37,6 +37,7 @@ final class AppState {
     let networkSnifferUseCase: NetworkSnifferUseCase
     let mirrorUseCase: ScreenMirrorUseCase
     let pairingUseCase: WirelessPairingUseCase
+    let pushFileUseCase: PushFileUseCase
     var mirroringDeviceID: String?
     
     init(
@@ -49,7 +50,8 @@ final class AppState {
         networkProxyUseCase: NetworkProxyUseCase,
         networkSnifferUseCase: NetworkSnifferUseCase,
         mirrorUseCase: ScreenMirrorUseCase,
-        pairingUseCase: WirelessPairingUseCase
+        pairingUseCase: WirelessPairingUseCase,
+        pushFileUseCase: PushFileUseCase
     ) {
         self.discoverUseCase = discoverUseCase
         self.lifecycleUseCase = lifecycleUseCase
@@ -64,6 +66,7 @@ final class AppState {
         isLaunchAtLoginEnabled = SMAppService.mainApp.status == .enabled
         self.mirrorUseCase = mirrorUseCase
         self.pairingUseCase = pairingUseCase
+        self.pushFileUseCase = pushFileUseCase
     }
     
     var hasAndroidSDK: Bool {
