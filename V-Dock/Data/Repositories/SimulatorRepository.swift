@@ -85,3 +85,14 @@ extension SimulatorRepository: LogStreamProtocol {
         return shell.stream(id: processID, executable: "/usr/bin/xcrun", args: ["simctl", "spawn", device.id, "log", "show", "--stream", "--style", "compact"])
     }
 }
+
+extension SimulatorRepository: NetworkProxyProtocol {
+    func setProxy(device: Device, host: String, port: Int) async throws {
+        // Note: iOS Simulator proxy settings require manual profile installation in this MVP.
+        print("Setting proxy on iOS Simulator requires installing a .mobileconfig or setting it manually to \(host):\(port)")
+    }
+    
+    func clearProxy(device: Device) async throws {
+        print("Clearing proxy on iOS Simulator.")
+    }
+}

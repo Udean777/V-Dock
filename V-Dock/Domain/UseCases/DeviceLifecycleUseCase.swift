@@ -20,6 +20,7 @@ final class DeviceLifecycleUseCase: Sendable {
         case .coldBoot: try await handler.coldBoot(device: device)
         case .wipeData: try await handler.wipeData(device: device)
         case .forceKill: try await handler.forceKill(device: device)
+        case .mirror: break
         }
     }
 }

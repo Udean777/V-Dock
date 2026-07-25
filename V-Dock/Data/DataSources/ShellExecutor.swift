@@ -69,6 +69,44 @@ final class ShellExecutor: Sendable {
         }.value
     }
 
+    func runRaw(_ executable: String, args: [String]) async throws -> Data {
+        return try await Task.detached {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: executable)
+            process.arguments = args
+
+            let outputPipe = Pipe()
+            let errorPipe = Pipe()
+            process.standardOutput = outputPipe
+            process.standardError = errorPipe
+
+            do {
+                try process.run()
+            } catch {
+                throw ShellError.executableNotFound(executable)
+            }
+
+            var outputData = Data()
+            var errorData = Data()
+
+            if let out = try? outputPipe.fileHandleForReading.readToEnd() {
+                outputData = out
+            }
+            if let err = try? errorPipe.fileHandleForReading.readToEnd() {
+                errorData = err
+            }
+
+            process.waitUntilExit()
+
+            if process.terminationStatus == 0 {
+                return outputData
+            } else {
+                let errorOutput = String(data: errorData, encoding: .utf8) ?? ""
+                throw ShellError.nonZeroExit(code: Int(process.terminationStatus), stderr: errorOutput)
+            }
+        }.value
+    }
+
     func runDetached(_ executable: String, args: [String]) throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executable)

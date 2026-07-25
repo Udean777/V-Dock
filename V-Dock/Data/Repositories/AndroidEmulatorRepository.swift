@@ -145,3 +145,16 @@ extension AndroidEmulatorRepository: LogStreamProtocol {
         return shell.stream(id: processID, executable: adb, args: ["-e", "logcat", "-v", "brief"])
     }
 }
+
+extension AndroidEmulatorRepository: NetworkProxyProtocol {
+    func setProxy(device: Device, host: String, port: Int) async throws {
+        guard let adb = adbPath else { return }
+        // Note: For Android Emulator, localhost from Mac is usually 10.0.2.2.
+        _ = try await shell.run(adb, args: ["-s", device.id, "shell", "settings", "put", "global", "http_proxy", "\(host):\(port)"])
+    }
+    
+    func clearProxy(device: Device) async throws {
+        guard let adb = adbPath else { return }
+        _ = try await shell.run(adb, args: ["-s", device.id, "shell", "settings", "put", "global", "http_proxy", ":0"])
+    }
+}

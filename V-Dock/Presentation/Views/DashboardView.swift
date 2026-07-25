@@ -12,13 +12,21 @@ struct DashboardView: View {
                 .navigationTitle("Devices")
         }
         .toolbar {
-            ToolbarItem {
+            ToolbarItemGroup {
+                Button {
+                    state.openPairing()
+                } label: {
+                    Image(systemName: "wifi")
+                }
+                .help("Connect Wireless Device")
+
                 if state.isRefreshing {
                     ProgressView()
                         .controlSize(.small)
                 }
             }
         }
+
         .task {
             NSApp.activate(ignoringOtherApps: true)
             await state.refresh()
