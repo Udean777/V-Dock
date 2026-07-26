@@ -33,6 +33,9 @@ final class DependencyContainer {
         let iosPushFileRepo = IOSSimulatorPushFileRepository(executor: shell)
         let pushFileUseCase = PushFileUseCase(androidRepo: androidPushFileRepo, iosRepo: iosPushFileRepo)
 
+        let releaseChecker = ReleaseChecker()
+        let updateChecker = UpdateCheckerViewModel(checker: releaseChecker)
+
         appState = AppState(
             discoverUseCase: discoverUseCase,
             lifecycleUseCase: lifecycleUseCase,
@@ -41,7 +44,8 @@ final class DependencyContainer {
             quickTogglesUseCase: quickTogglesUseCase,
             logStreamUseCase: logStreamUseCase,
             pairingUseCase: pairingUseCase,
-            pushFileUseCase: pushFileUseCase
+            pushFileUseCase: pushFileUseCase,
+            updateChecker: updateChecker
         )
     }
 }

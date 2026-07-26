@@ -35,6 +35,7 @@ final class AppState {
     let logStreamUseCase: LogStreamUseCase
     let pairingUseCase: WirelessPairingUseCase
     let pushFileUseCase: PushFileUseCase
+    let updateChecker: UpdateCheckerViewModel
     
     init(
         discoverUseCase: DiscoverDevicesUseCase,
@@ -44,7 +45,8 @@ final class AppState {
         quickTogglesUseCase: QuickTogglesUseCase,
         logStreamUseCase: LogStreamUseCase,
         pairingUseCase: WirelessPairingUseCase,
-        pushFileUseCase: PushFileUseCase
+        pushFileUseCase: PushFileUseCase,
+        updateChecker: UpdateCheckerViewModel
     ) {
         self.discoverUseCase = discoverUseCase
         self.lifecycleUseCase = lifecycleUseCase
@@ -57,6 +59,7 @@ final class AppState {
         isLaunchAtLoginEnabled = SMAppService.mainApp.status == .enabled
         self.pairingUseCase = pairingUseCase
         self.pushFileUseCase = pushFileUseCase
+        self.updateChecker = updateChecker
     }
     
     var hasAndroidSDK: Bool {

@@ -2,6 +2,8 @@ import SwiftUI
 
 struct DashboardView: View {
     @Environment(AppState.self) var state
+    @State private var showUpdateSheet = false
+    @State private var hasShownUpdate = false
 
     var body: some View {
         NavigationSplitView {
@@ -29,6 +31,10 @@ struct DashboardView: View {
         .task {
             NSApp.activate(ignoringOtherApps: true)
             await state.refresh()
+            
+            if !hasShownUpdate, case .idle = state.updateChecker.state {
+                await state.updateChecker.check()
+            }
         }
         .task {
             while !Task.isCancelled {
@@ -43,6 +49,15 @@ struct DashboardView: View {
             Button("OK", role: .cancel) { state.actionError = nil }
         } message: {
             Text(state.actionError ?? "")
+        }
+        .onChange(of: state.updateChecker.state) { _, new in
+            if case .updateAvailable = new, !hasShownUpdate {
+                showUpdateSheet = true
+                hasShownUpdate = true
+            }
+        }
+        .sheet(isPresented: $showUpdateSheet) {
+            UpdateAvailableSheet(checker: state.updateChecker)
         }
     }
 }
@@ -230,5 +245,65 @@ private struct PlatformSection: View {
         for device in devices {
             await state.perform(action, on: device)
         }
+    }
+}
+
+// MARK: - Update Sheet
+
+private struct UpdateAvailableSheet: View {
+    let checker: UpdateCheckerViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "arrow.down.circle")
+                .font(.system(size: 48))
+                .foregroundStyle(.blue)
+
+            Text("Update Available")
+                .font(.title2)
+                .fontWeight(.semibold)
+
+            if case .updateAvailable(let version) = checker.state {
+                Text("V-Dock v\(version) is ready to download")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            if case .downloading(let progress, _) = checker.state {
+                ProgressView(value: max(progress, 0.01), total: 1.0)
+                    .frame(width: 200)
+                Text("\(Int(progress * 100))%")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if case .downloaded = checker.state {
+                Text("Download complete!")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 12) {
+                Button("Later") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+
+                let isDownloading: Bool = { if case .downloading = checker.state { true } else { false } }()
+                let isDownloaded: Bool = { if case .downloaded = checker.state { true } else { false } }()
+
+                Button(isDownloaded ? "Install & Relaunch" : "Download") {
+                    if isDownloaded {
+                        checker.install()
+                        dismiss()
+                    } else {
+                        Task { await checker.downloadAndInstall() }
+                    }
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(isDownloading)
+            }
+        }
+        .padding(30)
+        .frame(width: 320)
     }
 }

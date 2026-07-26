@@ -140,6 +140,10 @@ struct MenuBarView: View {
         VStack(spacing: 0) {
             Divider()
 
+            updateStatusRow
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+
             VStack(spacing: 6) {
                 Button {
                     openDashboardWindow()
@@ -181,6 +185,92 @@ struct MenuBarView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
+        }
+    }
+
+    @ViewBuilder
+    private var updateStatusRow: some View {
+        let vm = state.updateChecker
+        switch vm.state {
+        case .idle:
+            Button("Check for Updates…") {
+                Task { await vm.check() }
+            }
+            .buttonStyle(.link)
+            .font(.caption)
+
+        case .checking:
+            HStack(spacing: 6) {
+                ProgressView()
+                    .controlSize(.small)
+                    .scaleEffect(0.7)
+                Text("Checking for Updates…")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+        case .upToDate(let v):
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.green)
+                Text("Up to date (v\(v))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+        case .updateAvailable(let version):
+            Button {
+                Task { await vm.downloadAndInstall() }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.blue)
+                    Text("Update v\(version) → Download")
+                        .font(.caption)
+                        .foregroundStyle(.blue)
+                }
+            }
+            .buttonStyle(.plain)
+
+        case .downloading(let progress, let version):
+            HStack(spacing: 6) {
+                ProgressView(value: progress, total: 1.0)
+                    .progressViewStyle(.linear)
+                    .frame(width: 60)
+                Text("Downloading v\(version)…")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+        case .downloaded(_, let version):
+            Button {
+                vm.install()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.green)
+                    Text("v\(version) ready — Install Now")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                }
+            }
+            .buttonStyle(.plain)
+
+        case .error(let msg):
+            HStack(spacing: 4) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+                Text(msg)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            .help(msg)
         }
     }
 
