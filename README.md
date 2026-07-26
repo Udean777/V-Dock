@@ -5,6 +5,8 @@
 
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-Blue?logo=swift&logoColor=white&style=for-the-badge)](https://developer.apple.com/xcode/swiftui/)
 [![macOS](https://img.shields.io/badge/macOS-14.0+-black?logo=apple&logoColor=white&style=for-the-badge)](https://www.apple.com/macos/)
+[![Version](https://img.shields.io/badge/Version-1.1.0-blue?style=for-the-badge)]()
+[![Release](https://img.shields.io/badge/Release-GitHub%20Releases-green?style=for-the-badge)]()
 [![Architecture](https://img.shields.io/badge/Architecture-Clean-brightgreen?style=for-the-badge)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)]()
 
@@ -104,12 +106,26 @@ Notifications appear as banners and respect macOS Focus modes.
 
 ---
 
+### 🔄 Built-in Auto-Update
+
+V-Dock checks for new versions automatically via the GitHub Releases API — no App Store needed.
+
+- **How it works:** On launch or when the Dashboard opens, V-Dock fetches the latest release tag from `api.github.com/repos/Udean777/V-Dock/releases/latest` and compares it with the current version using semver-aware numeric comparison.
+- **UI Entry Points:**
+  - **Menu Bar:** A status row in the footer shows "Check for Updates…" / "Up to date" / "Update vX.X → Download".
+  - **Dashboard Modal:** When an update is detected, a modal appears automatically (non-blocking — tap "Later" to dismiss forever).
+- **Install:** Downloads the DMG to a temp directory, mounts it, replaces `/Applications/V-Dock.app`, applies Gatekeeper bypass (`xattr -cr` + `codesign`), and relaunches automatically. If running from Xcode or a non-/Applications path, the DMG opens for manual install instead.
+- **Non-mandatory:** Users can ignore updates indefinitely. The status row remains visible for those who want it later.
+
+---
+
 ### 🥷 Under The Hood
 
 - **Stealth Hybrid Mode:** Runs as a Menu Bar accessory (`.accessory`). When opening the Dashboard, promotes to a regular app (`.regular`) with Dock icon and keyboard shortcuts.
 - **Dynamic Activation Policy:** Automatically reverts to `.accessory` when all windows are closed.
 - **Native Shortcuts:** `Cmd + Q`, `Cmd + W`, `Cmd + ,`, `Cmd + R` work reliably via low-level `NSEvent` monitors.
 - **Swift Concurrency:** Uses `async/await` and `AsyncStream` for non-blocking shell execution.
+- **Auto-Update:** Zero external dependencies. Uses GitHub Releases API + `URLSessionDownloadDelegate` for progress tracking. Shell script handles in-place app replacement and relaunch.
 
 ---
 
@@ -119,15 +135,15 @@ Built using **Clean Architecture** principles:
 
 ### 1. Presentation Layer
 SwiftUI Views with custom `NSWindow`/`NSHostingView` for full lifecycle control.
-_Key: `MenuBarView.swift`, `DashboardView.swift`, `SettingsView.swift`_
+_Key: `MenuBarView.swift`, `DashboardView.swift`, `SettingsView.swift`, `PairDeviceView.swift`_
 
 ### 2. Domain Layer
 Business logic and state management. `AppState` (`@Observable`) is the single source of truth.
-_Key: `AppState.swift`, `Device.swift`_
+_Key: `AppState.swift`, `Device.swift`, `PushFileUseCase.swift`, `WirelessPairingUseCase.swift`_
 
 ### 3. Data Layer
-Shell command execution (`simctl`, `emulator`, `adb`) via `ShellExecutor`.
-_Key: `ShellExecutor.swift`_
+Shell command execution (`simctl`, `emulator`, `adb`) via `ShellExecutor`, plus external API clients and device bridge services.
+_Key: `ShellExecutor.swift`, `ReleaseChecker.swift`, `MinicapManager.swift`, `WirelessADBRepository.swift`_
 
 ---
 
